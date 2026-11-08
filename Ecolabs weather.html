@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="google-site-verification" content="l8Wxq7LG5EtopIJGGBWocHQkW3j5nvsXH9Nea_1kUqE" />
+<title>India Weather Map</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{--mh:52px;--ink:#16222e;--mut:#5d6b7a;--bg:#fff;--line:#e3e8ee;--acc:#0f6b8f;--sh:0 4px 18px rgba(20,40,60,.16)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font:15px/1.4 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif;color:var(--ink)}
+#map{position:absolute;inset:0;background:#cfe3ee}
+.leaflet-container{font-family:inherit}
+.card{background:var(--bg);border-radius:14px;box-shadow:var(--sh)}
+#top{position:absolute;z-index:1000;top:calc(max(10px,env(safe-area-inset-top)) + var(--mh));left:10px;right:10px;display:flex;gap:10px;align-items:flex-start;pointer-events:none}
+#top>*{pointer-events:auto}
+#brand{padding:9px 14px;white-space:nowrap}
+#brand h1{margin:0;font-size:16px;font-weight:700;letter-spacing:-.01em}
+#status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mut)}
+#dot{width:8px;height:8px;border-radius:50%;background:#f59e0b;animation:pulse 1.2s infinite}
+#dot.ok{background:#22c55e;animation:none}#dot.err{background:#ef4444;animation:none}
+@keyframes pulse{50%{opacity:.3}}
+#sw{position:relative;flex:1;max-width:380px}
+#q{width:100%;height:46px;border:0;border-radius:14px;padding:0 14px;font:inherit;box-shadow:var(--sh);outline:none}
+#q:focus{box-shadow:var(--sh),0 0 0 2px var(--acc)}
+#res{position:absolute;top:50px;left:0;right:0;overflow:hidden;display:none}
+#res button{display:block;width:100%;text-align:left;padding:10px 14px;border:0;background:none;font:inherit;cursor:pointer;border-bottom:1px solid var(--line)}
+#res button:hover{background:#f1f6f9}#res small{color:var(--mut);display:block}
+#bt{height:46px;padding:0 14px;border:0;cursor:pointer;font:inherit;font-weight:600;display:flex;align-items:center;gap:6px;white-space:nowrap;color:var(--ink)}
+#bt span{font-size:18px}
+#ctl{position:absolute;z-index:1000;right:10px;top:calc(max(10px,env(safe-area-inset-top)) + var(--mh) + 64px);display:flex;flex-direction:column;gap:8px}
+#ctl button{width:44px;height:44px;border:0;border-radius:12px;background:#fff;box-shadow:var(--sh);font-size:19px;cursor:pointer;color:var(--ink)}
+#ctl button:active{background:#e8f1f5}
+#ctl button.spin{animation:rot 1s linear infinite}@keyframes rot{to{transform:rotate(360deg)}}
+#lay{position:absolute;z-index:1000;right:62px;top:calc(max(10px,env(safe-area-inset-top)) + var(--mh) + 64px);padding:10px 14px;display:none;max-height:calc(100% - 200px);overflow-y:auto}
+#lay label{display:flex;gap:8px;align-items:center;padding:6px 0;cursor:pointer;white-space:nowrap}
+.lh{font-weight:600;margin:8px 0 6px;font-size:13px}
+.chips{display:flex;flex-direction:column;gap:6px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;font:inherit;cursor:pointer;text-align:left;color:var(--ink)}
+.chip[aria-pressed=true]{background:var(--acc);color:#fff;border-color:var(--acc)}.chip:disabled{opacity:.45}
+#lgwrap{position:absolute;z-index:1000;left:10px;top:calc(max(10px,env(safe-area-inset-top)) + var(--mh) + 64px);display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+#rtbtn{border:0;padding:10px 14px;font:inherit;font-weight:600;cursor:pointer;color:var(--ink);display:flex;gap:6px;align-items:center}
+#legend{padding:8px 10px;font-size:12.5px}
+#legend summary{cursor:pointer;font-weight:600;padding:2px 0;list-style:none}
+#legend summary::-webkit-details-marker{display:none}
+#lgb{margin-top:4px}
+#lgb>div{display:flex;align-items:center;gap:8px;padding:5px 0}
+#lgb>div+div{border-top:1px solid #dde4ea}
+#legend i{width:16px;height:12px;border-radius:3px;flex:none;border:1px solid rgba(0,0,0,.2)}
+#sheet{position:absolute;z-index:1100;left:0;right:0;bottom:0;margin:0 auto;width:min(100%,760px);max-height:36vh;min-height:190px;background:#fff;border-radius:20px 20px 0 0;box-shadow:0 -6px 28px rgba(20,40,60,.22);transform:translateY(105%);transition:transform .33s cubic-bezier(.22,.9,.3,1);display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom)}
+.pw{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}
+.pc{background:#f2f6f9;border-radius:12px;padding:9px 11px}
+.pc b{font-size:13px;display:block}.pc big{display:block;font-size:22px;font-weight:700;letter-spacing:-.02em;margin:2px 0}
+.pc small{display:block;color:var(--mut);font-size:11.5px;line-height:1.35}
+.pc.tot{background:var(--acc);color:#fff}.pc.tot small{color:#d6edf5}
+.fn{color:var(--mut);font-size:11.5px;margin:2px 0 10px}
+#sheet.big{max-height:50vh}
+@media(max-width:640px){.pw{grid-template-columns:repeat(2,1fr)}}
+#sheet.open{transform:none}#sheet.drag{transition:none}
+#grab{flex:none;height:26px;position:relative;touch-action:none;cursor:grab}
+#grab i{position:absolute;left:50%;top:9px;width:40px;height:5px;margin-left:-20px;border-radius:3px;background:#cbd5df}
+#x{position:absolute;right:8px;top:2px;border:0;background:none;font-size:18px;width:36px;height:30px;cursor:pointer;color:var(--mut)}
+#sbody{overflow-y:auto;padding:0 16px 14px;-webkit-overflow-scrolling:touch}
+.hd{display:flex;gap:14px;align-items:center}
+.ic{font-size:46px;line-height:1}.tp{font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.cd{color:var(--mut);font-size:14px}.pl{margin-left:auto;text-align:right;max-width:52%}
+.pl b{display:block;font-size:16px}.pl span{display:block;color:var(--mut);font-size:12.5px}
+.st{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px;margin:12px 0}
+.st div{background:#f2f6f9;border-radius:10px;padding:7px 10px}.st small{display:block;color:var(--mut);font-size:11.5px}
+.sp{font-weight:600;margin:6px 0;font-size:13px}
+.strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
+.strip div{flex:none;min-width:68px;text-align:center;background:#f2f6f9;border-radius:10px;padding:7px 8px;font-size:13px}
+.strip span{display:block;font-size:22px}.strip small{color:var(--mut);display:block;font-size:11.5px}
+.ld{padding:22px;text-align:center;color:var(--mut)}
+.cl,.rl{background:rgba(255,255,255,.85);border:0;box-shadow:none;font-size:11px;font-weight:600;padding:0 4px;color:#1d2b38}
+.cl:before,.rl:before{display:none}.nolbl .cl{display:none}
+.sl{background:none;border:0}
+.sl span{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-size:11px;font-weight:700;color:#1d2b38;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 5px #fff;pointer-events:none}
+#rtmodal{position:fixed;inset:0;z-index:1300;background:rgba(15,25,35,.45);display:flex;align-items:flex-start;justify-content:center;padding:10vh 12px 12px}
+#rtmodal[hidden]{display:none}
+.rtbox{position:relative;width:min(100%,420px);padding:18px;display:flex;flex-direction:column;gap:8px}
+.rtbox h2{margin:0 0 4px;font-size:18px}.rtbox label{font-size:13px;font-weight:600;color:var(--mut)}
+.rtbox input{width:100%;height:44px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font:inherit}
+.rtbox input:focus{outline:2px solid var(--acc);border-color:transparent}
+.fld{position:relative}
+.sg{position:absolute;top:46px;left:0;right:0;background:#fff;border-radius:10px;box-shadow:var(--sh);display:none;z-index:2;overflow:hidden}
+.sg button{display:block;width:100%;text-align:left;padding:10px 12px;border:0;background:none;font:inherit;cursor:pointer;border-bottom:1px solid var(--line)}
+.sg button:hover{background:#f1f6f9}.sg small{color:var(--mut);display:block}
+.rtclose{position:absolute;right:8px;top:8px;border:0;background:none;font-size:18px;cursor:pointer;width:36px;height:36px;color:var(--mut)}
+.go{height:44px;padding:0 18px;border:0;border-radius:10px;background:var(--acc);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+.go:disabled{opacity:.45;cursor:default}
+.ract{display:flex;justify-content:flex-end;gap:8px;align-items:center;margin-top:6px}
+#rmsg{color:#b91c1c;font-size:13px}
+#wm{position:absolute;z-index:900;right:10px;bottom:24px;font-size:11px;font-weight:700;letter-spacing:.05em;color:rgba(22,34,46,.6);text-shadow:0 0 3px #fff,0 0 3px #fff;pointer-events:none;user-select:none}
+.toast{position:fixed;z-index:1500;left:50%;top:70px;transform:translateX(-50%);padding:10px 16px;background:#16222e;color:#fff;border-radius:10px;font-size:13px;max-width:90%;text-align:center}
+@media(max-width:640px){#brand{display:none}#q{height:44px}#bt{height:44px;padding:0 12px}#bt b{display:none}#lgwrap{top:auto;bottom:12px}#sheet{min-height:180px}}
+@media(prefers-reduced-motion:reduce){#sheet{transition:none}}
+
+/* ---- mode selector, API status, mode visibility, tracks placeholder ---- */
+#modebar{position:absolute;z-index:1001;top:max(10px,env(safe-area-inset-top));left:10px;right:10px;display:flex;justify-content:center;pointer-events:none}
+#modes{pointer-events:auto;position:relative;display:flex;padding:4px;gap:2px;align-items:center}
+#modes button{position:relative;z-index:1;border:0;background:none;font:inherit;font-weight:600;font-size:13px;letter-spacing:.06em;height:34px;min-width:84px;padding:0 14px;border-radius:10px;cursor:pointer;color:var(--mut);transition:color .25s}
+#modes button[aria-selected=true]{color:#fff}
+#mpill{position:absolute;z-index:0;top:4px;left:4px;height:34px;border-radius:10px;background:var(--acc);transition:transform .28s cubic-bezier(.22,.9,.3,1),width .28s}
+#api{pointer-events:auto;position:absolute;right:0;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:6px;padding:7px 10px;font-size:11.5px;color:var(--mut);white-space:nowrap}
+#api i{width:8px;height:8px;border-radius:50%;background:#9aa7b4}
+#api.ok i{background:#22c55e}#api.bk i{background:#f59e0b}#api.err i{background:#ef4444}
+.oc-only,.lgship,#lgrail{display:none}#lay .oc-only,#lay .tk-only{display:none}
+body.m-oceans .oc-only{display:flex}body.m-oceans #lay .oc-only{display:flex}body.m-oceans .lgship{display:flex}
+body.m-tracks #lay .tk-only{display:flex}body.m-tracks #lgrail{display:block}
+body.m-oceans .rd-only{display:none!important}
+body.m-tracks #rtbtn,body.m-tracks #bt{display:none!important}   /* Tracks: no driving routes, no satellite (imagery shows roads) */
+#lgrail{border-top:1px solid #dde4ea;margin-top:4px;padding-top:4px}#lgrail>div{display:flex;align-items:center;gap:8px;padding:4px 0}#lgrail i{width:16px;height:3px;border-radius:2px;flex:none}#lgrail small{color:var(--mut);display:block;font-size:11px;line-height:1.3;width:190px;max-width:100%}
+.lgship i{background:#c2255c!important;height:3px!important;border:0!important}
+#shbtn{border:0;padding:10px 14px;font:inherit;font-weight:600;cursor:pointer;color:var(--ink);gap:6px;align-items:center}
+#shmodal{position:fixed;inset:0;z-index:1300;background:rgba(15,25,35,.45);display:flex;align-items:flex-start;justify-content:center;padding:8vh 12px 12px;overflow-y:auto}
+#shmodal[hidden]{display:none}#shmsg{color:#b91c1c;font-size:13px}
+#shrows{display:flex;flex-direction:column;gap:8px}.shrow{display:flex;gap:6px;align-items:flex-end}.shrow .fld{flex:1;display:flex;flex-direction:column;gap:4px}.shrow .sg{top:auto;margin-top:2px}.shdel{height:44px;width:44px;padding:0;text-align:center}
+.st.mar{margin:4px 0 10px}.st small.n{color:#a05a00}
+.src{color:var(--mut);font-size:11.5px;margin-top:8px}
+@media(max-width:640px){#api span{display:none}#api{padding:9px}#modes button{min-width:72px;padding:0 10px}#modebar{justify-content:flex-start}}
+@media(max-width:400px){#modes button{min-width:62px;font-size:12px;padding:0 6px}}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="wm">K@rthikplayz</div>
+<div id="modebar"><div id="modes" class="card" role="tablist" aria-label="Map mode"><span id="mpill"></span>
+  <button role="tab" data-m="roads" aria-selected="true">ROADS</button><button role="tab" data-m="oceans" aria-selected="false">OCEANS</button><button role="tab" data-m="tracks" aria-selected="false">TRACKS</button></div>
+  <div id="api" class="card" title="Weather source status"><i></i><span id="apit">Waiting</span></div></div>
+<div id="top">
+  <div id="brand" class="card"><h1>India Weather Map</h1><div id="status"><span id="dot"></span><span id="stx">Loading live weather...</span></div></div>
+  <div id="sw"><input id="q" type="search" placeholder="Search city or state" autocomplete="off" aria-label="Search"><div id="res" class="card"></div></div>
+  <button id="bt" class="card" aria-label="Switch between map and satellite"><span>🛰️</span><b>Satellite</b></button>
+</div>
+<div id="ctl">
+  <button id="zi" aria-label="Zoom in">+</button><button id="zo" aria-label="Zoom out">−</button>
+  <button id="loc" aria-label="My location">◎</button><button id="rst" aria-label="Reset view">⌂</button>
+  <button id="ref" aria-label="Refresh weather">⟳</button><button id="lyb" aria-label="Layers and regions">☰</button>
+</div>
+<div id="lay" class="card">
+  <label class="rd-only"><input type="checkbox" data-l="wx" checked> Weather regions</label>
+  <label class="rd-only"><input type="checkbox" data-l="bd" checked> Boundaries &amp; names</label>
+  <label class="rd-only"><input type="checkbox" data-l="ct" checked> Cities</label>
+  <label><input type="checkbox" data-l="nt" checked> Night shading</label>
+  <label class="oc-only"><input type="checkbox" data-l="ow" checked> Ocean weather</label>
+  <label class="oc-only"><input type="checkbox" data-l="sr" checked> Shipping routes</label>
+  <label class="tk-only"><input type="checkbox" data-l="rl" checked> Railway lines</label>
+  <div class="lh rd-only">Regions</div><div class="chips rd-only" id="chips"></div>
+</div>
+<div id="lgwrap"><button id="rtbtn" class="card rd-only">🧭 Route</button><button id="shbtn" class="card oc-only">⚓ Ship route</button><details id="legend" class="card" open><summary>Weather legend</summary><div id="lgb"></div><div class="lgship" style="align-items:center;gap:8px;padding:5px 0;border-top:1px solid #dde4ea"><i style="width:16px;flex:none;border-radius:2px"></i>Shipping corridor</div><div id="lgrail"><div><i style="background:#e11d48;height:4px"></i>Railway line</div></div></details></div>
+<section id="sheet" aria-live="polite"><div id="grab"><i></i><button id="x" aria-label="Close">✕</button></div><div id="sbody"></div></section>
+
+<div id="rtmodal" role="dialog" aria-modal="true" aria-labelledby="rtt" hidden><div class="card rtbox">
+  <button id="rtx" class="rtclose" aria-label="Close">✕</button><h2 id="rtt">Plan a route</h2>
+  <label for="rfrom">Starting point</label>
+  <div class="fld"><input id="rfrom" placeholder="City, town or village" autocomplete="off"><div class="sg" id="sgf"></div></div>
+  <button id="ruse" type="button" class="chip">📍 Use my current location</button>
+  <label for="rto">Destination</label>
+  <div class="fld"><input id="rto" placeholder="City, town or village" autocomplete="off"><div class="sg" id="sgt"></div></div>
+  <div id="rmsg" role="alert"></div>
+  <div class="ract"><button id="rclr" type="button" class="chip" hidden>Clear route</button><button id="rgo" type="button" class="go" disabled>Show route</button></div>
+</div></div>
+<div id="shmodal" role="dialog" aria-modal="true" aria-labelledby="sht" hidden><div class="card rtbox">
+  <button id="shx" class="rtclose" aria-label="Close">✕</button><h2 id="sht">Plan a ship route</h2>
+  <div id="shrows"></div>
+  <button id="shadd" type="button" class="chip">＋ Add stop</button>
+  <div id="shmsg" role="alert"></div>
+  <div class="ract"><button id="shclr" type="button" class="chip" hidden>Clear route</button><button id="shgo" type="button" class="go" disabled>Show route</button></div>
+</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+<script>
+"use strict";
+/* ================= CONFIG ================= */
+// India state boundaries (tried in order) and world country boundaries (Natural Earth, includes continent field).
+const STATE_URLS=[
+ "https://gist.githubusercontent.com/jbrobst/56c13bbbf9d97d187fea01ca62ea5112/raw/e388c4cae20aa53cb5090210a42ebb9b765c0a36/india_states.geojson",
+ "https://raw.githubusercontent.com/Subhash9325/GeoJson-Data-of-Indian-States/master/Indian_States",
+ "https://cdn.jsdelivr.net/gh/udit-001/india-maps-data@main/geojson/india.geojson"];
+const WORLD_URLS=[
+ "https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/ne_110m_admin_0_countries.geojson",
+ "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson"];
+const TTL=30*60e3,CHUNK=40;
+const CITIES=[["Delhi",28.61,77.21],["Mumbai",19.08,72.88],["Kolkata",22.57,88.36],["Chennai",13.08,80.27],["Bengaluru",12.97,77.59],["Hyderabad",17.39,78.49],["Ahmedabad",23.02,72.57],["Pune",18.52,73.86],["Jaipur",26.91,75.79],["Lucknow",26.85,80.95],["Kanpur",26.45,80.33],["Nagpur",21.15,79.09],["Bhopal",23.26,77.41],["Patna",25.59,85.14],["Chandigarh",30.73,76.78],["Srinagar",34.08,74.8],["Leh",34.15,77.58],["Amritsar",31.63,74.87],["Dehradun",30.32,78.03],["Guwahati",26.14,91.74],["Shillong",25.57,91.88],["Bhubaneswar",20.3,85.82],["Raipur",21.25,81.63],["Ranchi",23.34,85.31],["Visakhapatnam",17.69,83.22],["Kochi",9.93,76.27],["Thiruvananthapuram",8.52,76.94],["Madurai",9.93,78.12],["Panaji",15.5,73.83],["Jodhpur",26.24,73.02],["Indore",22.72,75.86],["Surat",21.17,72.83],["Varanasi",25.32,83.0],["Gangtok",27.33,88.61],["Port Blair",11.62,92.73],["Itanagar",27.08,93.62],["Agartala",23.83,91.28],["Imphal",24.82,93.94],["Shimla",31.1,77.17],["Mysuru",12.3,76.64]];
+const OTHER="London,51.51,-0.13;Paris,48.86,2.35;Berlin,52.52,13.4;Madrid,40.42,-3.7;Rome,41.9,12.5;Moscow,55.76,37.62;Istanbul,41.01,28.98;Kyiv,50.45,30.52;Warsaw,52.23,21.01;Stockholm,59.33,18.07;Athens,37.98,23.73;Beijing,39.9,116.4;Shanghai,31.23,121.47;Tokyo,35.68,139.69;Seoul,37.57,126.98;Bangkok,13.76,100.5;Singapore,1.35,103.82;Jakarta,-6.21,106.85;Manila,14.6,120.98;Hanoi,21.03,105.85;Kuala Lumpur,3.14,101.69;Dubai,25.2,55.27;Riyadh,24.71,46.68;Tehran,35.69,51.39;Karachi,24.86,67.0;Dhaka,23.81,90.41;Kathmandu,27.72,85.32;Colombo,6.93,79.86;Almaty,43.24,76.89;Tashkent,41.3,69.24;Novosibirsk,55.03,82.92;Ulaanbaatar,47.89,106.91;New York,40.71,-74.01;Los Angeles,34.05,-118.24;Chicago,41.88,-87.63;Toronto,43.65,-79.38;Vancouver,49.28,-123.12;Mexico City,19.43,-99.13;Havana,23.11,-82.37;Anchorage,61.22,-149.9;São Paulo,-23.55,-46.63;Rio de Janeiro,-22.91,-43.17;Buenos Aires,-34.6,-58.38;Lima,-12.05,-77.04;Bogotá,4.71,-74.07;Santiago,-33.45,-70.67;Caracas,10.48,-66.9;Quito,-0.18,-78.47".split(";").map(s=>{const a=s.split(",");return[a[0],+a[1],+a[2]]});
+const ALLC=CITIES.concat(OTHER);
+// The six weather types shown on the map.
+const CL=[["Sunny","#fbbf24","☀️"],["Cloudy","#94a3b8","☁️"],["Drizzle","#7dd3fc","🌦️"],["Rain","#2563eb","🌧️"],["Storm","#7c3aed","⛈️"],["Snow","#c7d2fe","❄️"],["Night","#1e293b","🌙"]];
+const K={SUN:0,CLD:1,DRZ:2,RAIN:3,STM:4,SNW:5,NIT:6};
+const WMO={0:["☀️","Clear"],1:["🌤️","Mainly clear"],2:["⛅","Partly cloudy"],3:["☁️","Overcast"],45:["🌫️","Fog"],48:["🌫️","Rime fog"],51:["🌦️","Light drizzle"],53:["🌦️","Drizzle"],55:["🌧️","Dense drizzle"],56:["🌧️","Freezing drizzle"],57:["🌧️","Freezing drizzle"],61:["🌦️","Light rain"],63:["🌧️","Rain"],65:["🌧️","Heavy rain"],66:["🌧️","Freezing rain"],67:["🌧️","Freezing rain"],71:["🌨️","Light snow"],73:["🌨️","Snow"],75:["❄️","Heavy snow"],77:["🌨️","Snow grains"],80:["🌦️","Rain showers"],81:["🌧️","Rain showers"],82:["⛈️","Violent showers"],85:["🌨️","Snow showers"],86:["🌨️","Snow showers"],95:["⛈️","Thunderstorm"],96:["⛈️","Thunderstorm, hail"],99:["⛈️","Thunderstorm, hail"]};
+const CUR="temperature_2m,apparent_temperature,relative_humidity_2m,is_day,precipitation,weather_code,cloud_cover,pressure_msl,wind_speed_10m,wind_direction_10m";
+const SUBC=["PAK","BGD","NPL","BTN","LKA"]; // neighbours that complete the "Indian subcontinent" region
+// Each region has its own grid: bounds [W,S,E,N], cell size, sample spacing (degrees), canvas scale.
+const ZDEF={
+ sub:{name:"Indian subcontinent",b:[60.5,5.5,98,37.8],step:.2,sp:2,sc:4,sm:[2,1]},
+ asia:{name:"Rest of Asia",b:[26,-11,180,78],step:.5,sp:5,sc:3,sm:[3,2]},
+ eu:{name:"Europe",b:[-25,34,60,72],step:.4,sp:4,sc:3,sm:[3,2]},
+ af:{name:"Africa",b:[-20,-36,52,38],step:.5,sp:5,sc:3,sm:[3,2]},
+ na:{name:"North America",b:[-170,7,-10,84],step:.5,sp:6,sc:3,sm:[3,2]},
+ sa:{name:"South America",b:[-82,-56,-34,13],step:.4,sp:5,sc:3,sm:[3,2]},
+ oc:{name:"Australia & Oceania",b:[110,-48,180,2],step:.4,sp:4,sc:3,sm:[3,2]}};
+
+/* ================= HELPERS ================= */
+const R=Math.PI/180,mercY=l=>Math.log(Math.tan(Math.PI/4+l*R/2)),invY=y=>(2*Math.atan(Math.exp(y))-Math.PI/2)/R;
+const $=id=>document.getElementById(id),sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const stName=p=>p.ST_NM||p.NAME_1||p.st_nm||p.NAME||p.name||p.State||p.state||"";
+const A3=f=>f.properties.ADM0_A3||f.properties.adm0_a3||"",CONT=f=>f.properties.CONTINENT||f.properties.continent||"";
+let map,states=null,world=null,zones=[],sat=false,hl=null,selTok=0;
+const F={wx:true,bd:true,ct:true,nt:true,ow:true,sr:true,rl:true},detailCache={};
+let MODE="roads";   // roads | oceans | tracks
+
+/* ================= API LAYER: providers, automatic failover, cache =================
+   Every provider returns the same normalised object (null = field not supplied by that provider; never invented):
+   {src,time,temp,feels,code,isDay,humidity,cloud,pressure,precip,windSpeed(km/h),windDir,windGust(km/h)}
+   Marine providers return {src,waveHeight,waveDir,wavePeriod,wavePeriodKind,waveMax,sst}.
+   Roads code keeps receiving the Open-Meteo response shape via toOMCur()/toOMDetail(). */
+const API_TIMEOUT=12000,COOL=90e3;           // request timeout; how long a failing provider is skipped
+const PST={},MEM={},FLY={};
+async function jget(url,ms){
+  const c=new AbortController(),t=setTimeout(()=>c.abort(),ms||API_TIMEOUT);
+  try{
+    const r=await fetch(url,{signal:c.signal});
+    if(!r.ok){const e=new Error("HTTP "+r.status);e.status=r.status;throw e}
+    try{return await r.json()}catch(e){if(e.name==="AbortError")throw e;throw new Error("invalid JSON")}
+  }catch(e){if(e.name==="AbortError")throw new Error("timeout");throw e}
+  finally{clearTimeout(t)}
+}
+const nodata=m=>{const e=new Error(m||"no data");e.nodata=true;return e};     // provider is fine, just has nothing for this point
+const skipP=()=>{const e=new Error("n/a");e.skip=true;return e};               // provider does not cover this point
+const num=v=>typeof v==="number"&&isFinite(v)?v:null;
+const API={last:null,
+  report(scope,st,name){this.last={scope,st,name};const a=$("api");if(!a)return;
+    a.className="card "+st;$("apit").textContent=st==="ok"?"Primary API":st==="bk"?"Backup API":"APIs offline";
+    a.title=st==="err"?"All weather sources failed":(st==="bk"?"Primary source unavailable, using ":"Using ")+name}};
+/* Try providers in order. Failing providers are skipped for COOL ms (longer after HTTP 429) so we don't keep flipping. */
+async function chain(scope,list,fn){
+  const now=Date.now(),up=p=>(PST[p.id]&&PST[p.id].until)||0;
+  let order=list.filter(p=>up(p)<=now);
+  if(!order.length)order=list.slice().sort((a,b)=>up(a)-up(b));
+  let last=null,tried=0;
+  for(const p of order){
+    try{const d=await fn(p);if(d==null)throw nodata("no data");
+      PST[p.id]={until:0};API.report(scope,list[0]===p?"ok":"bk",p.name);return d}
+    catch(e){if(e.skip)continue;tried++;last=e;if(!e.nodata)PST[p.id]={until:Date.now()+(e.status===429?120e3:COOL)}}
+  }
+  if(tried&&!(last&&last.nodata))API.report(scope,"err");
+  throw last||nodata("no provider covers this point");
+}
+function memo(key,ttl,fn){
+  const c=MEM[key];if(c&&Date.now()-c.t<ttl)return Promise.resolve(c.d);
+  if(FLY[key])return FLY[key];
+  return FLY[key]=fn().then(d=>{MEM[key]={t:Date.now(),d};return d}).finally(()=>{delete FLY[key]});
+}
+const blankN=src=>({src,time:null,temp:null,feels:null,code:null,isDay:null,humidity:null,cloud:null,pressure:null,precip:null,windSpeed:null,windDir:null,windGust:null});
+function omN(c){
+  if(!c||num(c.temperature_2m)==null)return null;const n=blankN("Open-Meteo");
+  Object.assign(n,{time:c.time||null,temp:c.temperature_2m,feels:num(c.apparent_temperature),code:num(c.weather_code),isDay:num(c.is_day),humidity:num(c.relative_humidity_2m),
+    cloud:num(c.cloud_cover),pressure:num(c.pressure_msl),precip:num(c.precipitation),windSpeed:num(c.wind_speed_10m),windDir:num(c.wind_direction_10m),windGust:num(c.wind_gusts_10m)});
+  return n;
+}
+/* normalised -> the Open-Meteo shapes the Roads code already expects */
+const toOMCur=n=>n?{current:{temperature_2m:n.temp,weather_code:n.code,precipitation:n.precip,cloud_cover:n.cloud,is_day:n.isDay}}:{current:null};
+const toOMDetail=n=>({current:{time:n.time||new Date().toISOString().slice(0,16),temperature_2m:n.temp,apparent_temperature:n.feels,relative_humidity_2m:n.humidity,is_day:n.isDay,precipitation:n.precip,
+  weather_code:n.code,cloud_cover:n.cloud,pressure_msl:n.pressure,wind_speed_10m:n.windSpeed,wind_direction_10m:n.windDir},
+  hourly:{time:[],temperature_2m:[],precipitation_probability:[],weather_code:[],visibility:[]},
+  daily:{time:[],weather_code:[],temperature_2m_max:[],temperature_2m_min:[],precipitation_probability_max:[],precipitation_sum:[]},_src:n.src});
+/* MET Norway symbol_code (e.g. "lightrainshowers_day") -> WMO-style code, so one condition table serves every provider */
+function metCode(sym){
+  if(!sym)return null;const s=sym.replace(/_(day|night|polartwilight)$/,"");
+  if(s==="clearsky")return 0;if(s==="fair")return 1;if(s==="partlycloudy")return 2;if(s==="cloudy")return 3;if(s==="fog")return 45;
+  if(/thunder/.test(s))return 95;
+  const lt=/^light/.test(s),hv=/^heavy/.test(s),sh=/showers/.test(s);
+  if(/sleet/.test(s))return 67;
+  if(/snow/.test(s))return sh?85:hv?75:lt?71:73;
+  if(/rain/.test(s))return sh?(hv?82:lt?80:81):hv?65:lt?61:63;
+  return null;
+}
+const sfx=s=>/_day$/.test(s||"")?1:/_night$/.test(s||"")?0:null;
+const GRID_CUR=CUR,PT_CUR=CUR+",wind_gusts_10m";
+const omPts=pts=>`latitude=${pts.map(p=>(+p[0]).toFixed(3)).join(",")}&longitude=${pts.map(p=>(+p[1]).toFixed(3)).join(",")}`;
+
+/* ---- land / atmosphere providers ---- */
+const OM={id:"om",name:"Open-Meteo",
+  async grid(pts){
+    const j=await jget(`https://api.open-meteo.com/v1/forecast?${omPts(pts)}&current=${GRID_CUR}&timezone=auto`,15000),a=Array.isArray(j)?j:[j];
+    const out=pts.map((_,i)=>omN(a[i]&&a[i].current));if(!out.some(Boolean))throw new Error("invalid data");return out},
+  async point(ll,gust){
+    const j=await jget(`https://api.open-meteo.com/v1/forecast?${omPts([[ll.lat,ll.lng]])}&current=${gust?PT_CUR:GRID_CUR}&timezone=auto`),n=omN(j&&j.current);
+    if(!n)throw new Error("invalid data");return n},
+  async detail(ll){
+    const d=await jget(`https://api.open-meteo.com/v1/forecast?latitude=${ll.lat.toFixed(3)}&longitude=${ll.lng.toFixed(3)}&current=${CUR}&hourly=temperature_2m,precipitation_probability,weather_code,visibility&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum&forecast_days=7&timezone=auto`);
+    if(!d||!d.current||num(d.current.temperature_2m)==null||!d.hourly||!d.hourly.time||!d.daily||!d.daily.time)throw new Error("invalid data");
+    d._src="Open-Meteo";return d}};
+const MET={id:"met",name:"MET Norway",
+  async point(ll){
+    const j=await jget(`https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${ll.lat.toFixed(4)}&lon=${ll.lng.toFixed(4)}`),
+      t0=j&&j.properties&&j.properties.timeseries&&j.properties.timeseries[0],d=t0&&t0.data&&t0.data.instant&&t0.data.instant.details;
+    if(!d||num(d.air_temperature)==null)throw new Error("invalid data");
+    const nx=t0.data.next_1_hours||t0.data.next_6_hours||{},sym=nx.summary&&nx.summary.symbol_code,n=blankN("MET Norway"),ms=v=>num(v)==null?null:v*3.6;
+    Object.assign(n,{time:t0.time||null,temp:d.air_temperature,code:metCode(sym),isDay:sfx(sym),humidity:num(d.relative_humidity),cloud:num(d.cloud_area_fraction),
+      pressure:num(d.air_pressure_at_sea_level),precip:nx.details?num(nx.details.precipitation_amount):null,windSpeed:ms(d.wind_speed),windDir:num(d.wind_from_direction),windGust:ms(d.wind_speed_of_gust)});
+    return n},
+  async grid(pts){      // one request per point (api.met.no has no batch endpoint); small pool keeps us far below its 20 req/s limit
+    const out=new Array(pts.length).fill(null);let k=0,bad=0,err=null;
+    await Promise.all(Array.from({length:5},async()=>{for(;;){const i=k++;if(i>=pts.length)return;
+      try{out[i]=await this.point({lat:pts[i][0],lng:pts[i][1]})}catch(e){bad++;err=e}}}));
+    if(bad>pts.length/2||!out.some(Boolean))throw err||new Error("invalid data");return out},
+  async detail(ll){return toOMDetail(await this.point(ll))}};
+const LAND=[OM,MET];
+
+/* ---- marine providers (wave/sea data). Only Open-Meteo Marine and NOAA WW3 are global; MET Norway's ocean model is NW Europe only ---- */
+const hasM=m=>m&&(m.waveHeight!=null||m.sst!=null||m.wavePeriod!=null);
+const OMM={id:"omm",name:"Open-Meteo Marine",
+  async marine(ll){
+    const j=await jget(`https://marine-api.open-meteo.com/v1/marine?latitude=${ll.lat.toFixed(3)}&longitude=${ll.lng.toFixed(3)}&current=wave_height,wave_direction,wave_period,sea_surface_temperature&daily=wave_height_max&forecast_days=1&timezone=auto`).catch(e=>{if(e.status===400)throw nodata("outside model");throw e});
+    const c=j&&j.current;if(!c)throw new Error("invalid data");
+    const m={src:"Open-Meteo Marine",waveHeight:num(c.wave_height),waveDir:num(c.wave_direction),wavePeriod:num(c.wave_period),wavePeriodKind:"mean",
+      waveMax:j.daily?num((j.daily.wave_height_max||[])[0]):null,sst:num(c.sea_surface_temperature)};
+    if(!hasM(m))throw nodata("no marine data here");return m}};
+const NOAA={id:"ww3",name:"NOAA WaveWatch III",
+  async marine(ll){
+    if(Math.abs(ll.lat)>77.5)throw skipP();
+    const t=new Date();t.setUTCMinutes(0,0,0);const ts=t.toISOString().slice(0,19)+"Z",la=ll.lat.toFixed(2),lo=(((ll.lng%360)+360)%360).toFixed(2);
+    const q=v=>`${v}[(${ts})][(0.0)][(${la}):1:(${la})][(${lo}):1:(${lo})]`;
+    const j=await jget(`https://upwell.pfeg.noaa.gov/erddap/griddap/NWW3_Global_Best.json?${q("Thgt")},${q("Tper")},${q("Tdir")}`).catch(e=>{if(e.status===404||e.status===400)throw nodata("no wave data");throw e});
+    const tb=j&&j.table,row=tb&&tb.rows&&tb.rows[0];if(!row)throw new Error("invalid data");
+    const g=n=>num(row[tb.columnNames.indexOf(n)]);
+    const m={src:"NOAA WaveWatch III",waveHeight:g("Thgt"),waveDir:g("Tdir"),wavePeriod:g("Tper"),wavePeriodKind:"peak",waveMax:null,sst:null};
+    if(!hasM(m))throw nodata("land or no data");return m}};
+const METO={id:"meto",name:"MET Norway Ocean",
+  async marine(ll){
+    if(ll.lat<48||ll.lat>82||ll.lng<-30||ll.lng>50)throw skipP();
+    const j=await jget(`https://api.met.no/weatherapi/oceanforecast/2.0/complete?lat=${ll.lat.toFixed(4)}&lon=${ll.lng.toFixed(4)}`).catch(e=>{if(e.status===422)throw nodata("outside model area");throw e});
+    const ts=j&&j.properties&&j.properties.timeseries,d=ts&&ts[0]&&ts[0].data&&ts[0].data.instant&&ts[0].data.instant.details;if(!d)throw new Error("invalid data");
+    const m={src:"MET Norway Ocean",waveHeight:num(d.sea_surface_wave_height),waveDir:num(d.sea_surface_wave_from_direction),wavePeriod:num(d.sea_surface_wave_period),wavePeriodKind:"mean",waveMax:null,sst:num(d.sea_water_temperature)};
+    if(!hasM(m))throw nodata("no data");return m}};
+const MARINE=[OMM,NOAA,METO];
+
+/* ---- public entry points used by the map code ---- */
+/* Grid chunk of [lat,lon] -> [{current:{...Open-Meteo names}}] (same shape the Roads zones always consumed). */
+async function fetchChunk(ch,scope){
+  for(let a=0;a<2;a++){
+    try{const arr=await chain(scope||"land",LAND,p=>p.grid(ch));return arr.map(toOMCur)}
+    catch(e){if(e.status===429&&!a){await sleep(15000);LAND.forEach(p=>{PST[p.id]={until:0}});continue}throw e}
+  }
+}
+async function getDetail(ll){
+  const key="d"+ll.lat.toFixed(2)+","+ll.lng.toFixed(2);
+  return memo(key,10*60e3,()=>chain("land",LAND,p=>p.detail(ll)));
+}
+/* Ocean point: atmosphere + marine fetched in parallel through their own failover chains; either part may be unavailable. */
+function getOcean(ll){
+  const key="o"+ll.lat.toFixed(2)+","+ll.lng.toFixed(2);
+  return memo(key,10*60e3,async()=>{
+    const [a,m]=await Promise.allSettled([chain("sea-air",LAND,p=>p.point(ll,true)),chain("sea-wave",MARINE,p=>p.marine(ll))]);
+    if(a.status==="rejected"&&m.status==="rejected")throw a.reason||m.reason;
+    return{air:a.status==="fulfilled"?a.value:null,sea:m.status==="fulfilled"?m.value:null,airErr:a.reason,seaErr:m.reason};
+  });
+}
+
+/* One of the six weather types for a sample point. Rain/storm/snow outrank temperature and sky cover. */
+function ptCat(p){const c=p.code;
+  if(c>=95)return K.STM;
+  if((c>=71&&c<=77)||c===85||c===86)return K.SNW;
+  if((c>=61&&c<=67)||(c>=80&&c<=82)||p.pr>=.6)return K.RAIN;
+  if((c>=51&&c<=57)||p.pr>.1)return K.DRZ;
+  return p.cl>=55?K.CLD:(p.day===0?K.NIT:K.SUN);   // clear sky after dark = Night
+}
+
+/* ================= ZONE: grid, mask, weather regions ================= */
+class Zone{
+  constructor(id,items){
+    const d=ZDEF[id];Object.assign(this,{id,items,name:d.name,b:d.b,step:d.step,sp:d.sp,sc:d.sc,sm:d.sm});
+    const [W,S,E,N]=d.b;this.W=W;this.dY=d.step*R;this.yTop=mercY(N);
+    this.gw=Math.ceil((E-W)/d.step);this.gh=Math.ceil((this.yTop-mercY(S))/this.dY);
+    this.E=W+this.gw*d.step;this.S=invY(this.yTop-this.gh*this.dY);
+    this.rowLat=Array.from({length:this.gh},(_,j)=>invY(this.yTop-(j+.5)*this.dY));
+    this.pts=[];this.on=false;this.last=0;this.busy=false;this.fail=false;this.cls=null;this.ov=null;this.labels=null;
+    this.inside=new Uint8Array(this.gw*this.gh);this.buildMask();
+    this.lines=L.geoJSON({type:"FeatureCollection",features:items.map(i=>i.f)},{interactive:false,style:{color:"#27384a",weight:1,fillOpacity:0,opacity:.65}});
+    this.lg=L.layerGroup().addTo(map);
+  }
+  cellOf(ll){return[Math.floor((ll.lng-this.W)/this.step),Math.floor((this.yTop-mercY(ll.lat))/this.dY)]}
+  /* Rasterise the land outline once; it clips the colours to land and tells us which cells are "inside". */
+  buildMask(){
+    const {gw,gh,sc,W,step,yTop,dY}=this,w=gw*sc,h=gh*sc;
+    const m=this.maskC=document.createElement("canvas");m.width=w;m.height=h;const c=m.getContext("2d");c.fillStyle="#000";
+    const X=x=>(x-W)/(gw*step)*w,Y=y=>(yTop-mercY(y))/(gh*dY)*h;
+    this.items.forEach(it=>{
+      const g=it.f.geometry,polys=g.type==="Polygon"?[g.coordinates]:g.type==="MultiPolygon"?g.coordinates:[];
+      c.save();
+      if(it.lo!=null||it.hi!=null){const a=X(it.lo??-400),b=X(it.hi??400);c.beginPath();c.rect(a,0,b-a,h);c.clip()}
+      polys.forEach(poly=>{c.beginPath();
+        poly.forEach(ring=>ring.forEach(([x,y],n)=>{n?c.lineTo(X(x),Y(y)):c.moveTo(X(x),Y(y))}));
+        c.fill("evenodd")});
+      c.restore();
+    });
+    const s=document.createElement("canvas");s.width=gw;s.height=gh;const sc2=s.getContext("2d");
+    sc2.drawImage(m,0,0,gw,gh);const d=sc2.getImageData(0,0,gw,gh).data;
+    for(let k=0;k<gw*gh;k++)this.inside[k]=d[k*4+3]>110?1:0;
+  }
+  /* Sample points on a coarse grid, keeping only those near land. */
+  samplePts(){
+    const out=[],[W,S,E,N]=this.b,sp=this.sp,r=Math.ceil(sp*.55/this.step),{gw,gh}=this;
+    for(let la=Math.ceil(S/sp)*sp;la<=N;la+=sp)for(let lo=Math.ceil(W/sp)*sp;lo<=E;lo+=sp){
+      const [ci,cj]=this.cellOf({lat:la,lng:lo});let ok=0;
+      for(let j=Math.max(0,cj-r);j<=Math.min(gh-1,cj+r)&&!ok;j++)for(let i=Math.max(0,ci-r);i<=Math.min(gw-1,ci+r);i++)if(this.inside[j*gw+i]){ok=1;break}
+      if(ok)out.push([la,lo]);
+    }
+    return out;
+  }
+  async load(force){
+    if(this.busy)return;this.busy=true;this.fail=false;setStatus("load");
+    try{
+      const key="iwm3_"+this.id;
+      if(!force){try{const c=JSON.parse(localStorage.getItem(key)||"null");
+        if(c&&Date.now()-c.t<TTL&&c.pts.length){this.pts=c.pts;this.last=c.t;this.render();return}}catch(e){}}
+      const P=this.samplePts(),got=[];
+      for(let k=0;k<P.length;k+=CHUNK){
+        if(k)await sleep(P.length>150?2500:500);
+        const ch=P.slice(k,k+CHUNK);
+        try{(await fetchChunk(ch)).forEach((o,i)=>{const c=o.current;
+          if(c&&c.temperature_2m!=null){const p={lat:ch[i][0],lon:ch[i][1],t:c.temperature_2m,code:c.weather_code,pr:c.precipitation||0,cl:c.cloud_cover||0,day:c.is_day};p.k=ptCat(p);got.push(p)}})}
+        catch(e){this.fail=true}
+        if(got.length){this.pts=got.slice();this.render()}  // progressive display
+      }
+      if(!got.length)throw new Error("no data");
+      this.last=Date.now();
+      try{localStorage.setItem(key,JSON.stringify({t:this.last,pts:this.pts}))}catch(e){}
+    }catch(e){console.error(e);this.fail=true}
+    finally{this.busy=false;syncStatus()}
+  }
+  /* IDW-interpolate to every cell, vote for one of six weather types, mode-filter to merge neighbours,
+     then paint, smooth, and clip to land. */
+  render(){
+    if(!this.pts.length)return;
+    const {gw,gh,pts,rowLat,W,step}=this,raw=new Uint8Array(gw*gh),T=new Float32Array(gw*gh),D=[0,0,0,0],I=[0,0,0,0];
+    for(let j=0;j<gh;j++){const lat=rowLat[j],kx=Math.cos(lat*R);
+      for(let i=0;i<gw;i++){
+        const lon=W+(i+.5)*step;D.fill(1e9);
+        for(let n=0;n<pts.length;n++){const p=pts[n],dx=(p.lon-lon)*kx,dy=p.lat-lat,d=dx*dx+dy*dy;
+          if(d<D[3]){let m=3;while(m>0&&D[m-1]>d){D[m]=D[m-1];I[m]=I[m-1];m--}D[m]=d;I[m]=n}}
+        const V=[0,0,0,0,0,0,0];let sw=0,t=0,cl=0;
+        for(let m=0;m<4;m++){if(D[m]>=1e9)continue;const p=pts[I[m]],w=1/(D[m]+.05);sw+=w;t+=w*p.t;cl+=w*p.cl;V[p.k]+=w}
+        let best=-1,bv=0;
+        for(const k of [K.STM,K.SNW,K.RAIN,K.DRZ])if(V[k]>=.4*sw&&V[k]>bv){best=k;bv=V[k]}
+        if(best<0&&V[K.RAIN]+V[K.DRZ]>=.5*sw)best=V[K.RAIN]>=V[K.DRZ]?K.RAIN:K.DRZ;
+        if(best<0)best=cl/sw>=55?K.CLD:(V[K.NIT]>V[K.SUN]?K.NIT:K.SUN);
+        raw[j*gw+i]=best;T[j*gw+i]=t/sw;
+      }}
+    this.cls=this.modeFilter(this.modeFilter(raw,this.sm[0]),this.sm[1]);this.tmp=T;
+    const s=document.createElement("canvas");s.width=gw;s.height=gh;const sc=s.getContext("2d"),im=sc.createImageData(gw,gh);
+    const rgb=CL.map(c=>[1,3,5].map(o=>parseInt(c[1].substr(o,2),16)));
+    for(let k=0;k<gw*gh;k++){const c=rgb[this.cls[k]];im.data.set([c[0],c[1],c[2],this.cls[k]===K.NIT?0:255],k*4)}
+    sc.putImageData(im,0,0);
+    const o=document.createElement("canvas");o.width=gw*this.sc;o.height=gh*this.sc;const oc=o.getContext("2d");
+    oc.imageSmoothingEnabled=true;oc.imageSmoothingQuality="high";oc.drawImage(s,0,0,o.width,o.height);
+    oc.globalCompositeOperation="destination-in";oc.drawImage(this.maskC,0,0);
+    const url=o.toDataURL("image/png");
+    if(this.ov)this.ov.setUrl(url);else this.ov=L.imageOverlay(url,[[this.S,this.W],[this.b[3]>0?invY(this.yTop):this.b[3],this.E]],{pane:"wx",opacity:.62,interactive:false});
+    applyLayers();
+  }
+  modeFilter(a,r){
+    const {gw,gh}=this,out=new Uint8Array(a.length),cnt=new Uint16Array(CL.length);
+    for(let j=0;j<gh;j++)for(let i=0;i<gw;i++){
+      cnt.fill(0);
+      for(let y=Math.max(0,j-r);y<=Math.min(gh-1,j+r);y++)for(let x=Math.max(0,i-r);x<=Math.min(gw-1,i+r);x++)cnt[a[y*gw+x]]++;
+      let b=a[j*gw+i];for(let n=0;n<cnt.length;n++)if(cnt[n]>cnt[b])b=n;out[j*gw+i]=b;
+    }
+    return out;
+  }
+  /* Flood-fill the connected zone of identical weather under a click and summarise it. */
+  regionAt(ll,quick){
+    if(!this.cls)return null;
+    const {gw,gh,cls,inside}=this,[i,j]=this.cellOf(ll);
+    if(i<0||j<0||i>=gw||j>=gh||!inside[j*gw+i])return null;
+    if(quick)return true;
+    const c0=cls[j*gw+i],seen=new Uint8Array(gw*gh),st=[j*gw+i],cells=[];seen[st[0]]=1;
+    while(st.length){const k=st.pop();cells.push(k);const x=k%gw,y=(k/gw)|0;
+      for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=gw||ny>=gh)continue;
+        const n=ny*gw+nx;if(!seen[n]&&inside[n]&&cls[n]===c0){seen[n]=1;st.push(n)}}}
+    let sum=0,mn=99,mx=-99,area=0;
+    cells.forEach(k=>{const t=this.tmp[k];sum+=t;mn=Math.min(mn,t);mx=Math.max(mx,t);area+=this.step*this.step*111*111*Math.cos(this.rowLat[(k/gw)|0]*R)});
+    const cnt={},step=Math.max(1,Math.floor(cells.length/60));
+    for(let n=0;n<cells.length;n+=step){const k=cells[n],x=this.W+((k%gw)+.5)*this.step,y=this.rowLat[(k/gw)|0],pt=turf.point([x,y]);
+      for(const it of this.items){const b=it.f._bb;if(x<b[0]||x>b[2]||y<b[1]||y>b[3])continue;
+        if((it.lo!=null&&x<it.lo)||(it.hi!=null&&x>it.hi))continue;
+        if(turf.booleanPointInPolygon(pt,it.f)){cnt[it.name]=(cnt[it.name]||0)+1;break}}}
+    const tot=Object.values(cnt).reduce((a,b)=>a+b,0)||1;
+    const names=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).filter(e=>e[1]/tot>=.15).slice(0,3).map(e=>e[0]);
+    return{cls:c0,n:cells.length,avg:sum/cells.length,mn,mx,area,names};
+  }
+  /* State/country name labels: placed on the largest polygon; bigger areas appear at lower zoom. */
+  buildLabels(){
+    this.labels=[];
+    for(const it of this.items){
+      const g=it.f.geometry,polys=g.type==="Polygon"?[g.coordinates]:g.coordinates;let best=null,ba=-1;
+      polys.forEach(p=>{let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;p[0].forEach(a=>{x0=Math.min(x0,a[0]);x1=Math.max(x1,a[0]);y0=Math.min(y0,a[1]);y1=Math.max(y1,a[1])});
+        const a=(x1-x0)*(y1-y0);if(a>ba){ba=a;best=p}});
+      let pt;try{pt=turf.pointOnFeature(turf.polygon(best)).geometry.coordinates}catch(e){continue}
+      if((it.lo!=null&&pt[0]<it.lo)||(it.hi!=null&&pt[0]>it.hi))continue;
+      const z=this.id==="sub"&&!it.world?(ba>30?3.5:ba>10?4.5:ba>3?5:5.5):(ba>400?2:ba>100?3:ba>25?4:ba>6?5:5.5);
+      const m=L.marker([pt[1],pt[0]],{icon:L.divIcon({className:"sl",html:`<span>${esc(it.name)}</span>`,iconSize:[0,0]}),interactive:false,keyboard:false});
+      this.labels.push({m,z});
+    }
+  }
+}
+
+/* ================= ZONE MANAGEMENT ================= */
+function getZone(id){
+  let z=zones.find(q=>q.id===id);if(z)return z;
+  const mk=(f,x)=>Object.assign({f,name:stName(f.properties)},x||{});
+  const W=world?world.features.filter(f=>A3(f)!=="IND"&&A3(f)!=="ATA"):[];let items;
+  if(id==="sub")items=states.features.map(f=>mk(f)).concat(W.filter(f=>SUBC.includes(A3(f))).map(f=>mk(f,{world:1})));
+  else if(id==="asia")items=W.filter(f=>CONT(f)==="Asia"&&!SUBC.includes(A3(f))).map(f=>mk(f,{world:1})).concat(W.filter(f=>A3(f)==="RUS").map(f=>mk(f,{world:1,lo:60})));
+  else if(id==="eu")items=W.filter(f=>CONT(f)==="Europe"&&A3(f)!=="RUS").map(f=>mk(f,{world:1})).concat(W.filter(f=>A3(f)==="RUS").map(f=>mk(f,{world:1,hi:60})));
+  else items=W.filter(f=>CONT(f)==={na:"North America",sa:"South America",af:"Africa",oc:"Oceania"}[id]).map(f=>mk(f,{world:1}));
+  items.forEach(it=>{if(!it.f._bb)it.f._bb=turf.bbox(it.f)});
+  z=new Zone(id,items);zones.push(z);return z;
+}
+function setZone(id,on,fly){
+  const z=getZone(id);z.on=on;
+  document.querySelector(`.chip[data-z=${id}]`).setAttribute("aria-pressed",on);
+  if(on){if(!z.labels)z.buildLabels();z.load(false);if(fly)map.flyToBounds([[z.S,z.W],[z.b[3],z.E]],{padding:[10,10],duration:1})}
+  applyLayers();
+}
+function applyLayers(){
+  if(NT.ov)F.nt?NT.ov.addTo(map):map.removeLayer(NT.ov);
+  zones.forEach(z=>{
+    if(z.ov)(MODE!=="oceans"&&z.on&&F.wx)?z.ov.addTo(map):map.removeLayer(z.ov);
+    (MODE!=="oceans"&&z.on&&F.bd)?z.lines.addTo(map):map.removeLayer(z.lines);
+  });
+  updateLabels();
+  if(typeof ocApply==="function"&&typeof OC!=="undefined")ocApply();
+  if(typeof railApply==="function"&&typeof RL!=="undefined")railApply();
+}
+function updateLabels(){
+  if(!map)return;const z=map.getZoom();
+  map.getContainer().classList.toggle("nolbl",z<6.5);
+  (MODE!=="oceans"&&F.ct&&z>=6.5)?map.cities.addTo(map):map.removeLayer(map.cities);   // city dots/names only when zoomed in
+  zones.forEach(q=>{if(!q.labels)return;
+    q.labels.forEach(l=>{const want=MODE!=="oceans"&&q.on&&F.bd&&z<6.5&&z>=l.z,has=q.lg.hasLayer(l.m);
+      if(want&&!has)q.lg.addLayer(l.m);else if(!want&&has)q.lg.removeLayer(l.m)})});
+}
+const zoneAt=(ll,quick)=>{if(MODE==="oceans"||!F.wx)return null;for(const z of zones)if(z.on&&z.cls){const r=z.regionAt(ll,quick);if(r)return r}return null};
+
+/* ================= MAP INIT ================= */
+function initMap(){
+  map=L.map("map",{zoomControl:false,zoomSnap:.5,minZoom:2,maxBounds:[[-85,-180],[85,180]],maxBoundsViscosity:1});
+  map.createPane("night").style.zIndex=250;               // night shading: above tiles, below weather colours
+  map.createPane("wx").style.zIndex=300;                       // weather colours: above tiles, below lines/labels
+  const rp=map.createPane("ref");rp.style.zIndex=350;rp.style.pointerEvents="none";
+  const o={maxZoom:18,noWrap:true,bounds:[[-85,-180],[85,180]]};
+  map.bases={
+    street:L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",{...o,attribution:"Tiles © Esri"}),
+    sat:L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{...o,maxNativeZoom:17,attribution:"Imagery © Esri"}),
+    terr:L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}",{...o,maxNativeZoom:13,attribution:"Terrain © Esri"})};   // Tracks mode: no roads
+  map.ref=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",{...o,pane:"ref"});
+  let bad=0;Object.values(map.bases).forEach(l=>l.on("tileerror",()=>{if(++bad===10)toast("Base map tiles are failing to load")}));
+  setSat(false);
+  map.cities=L.layerGroup();
+  CITIES.forEach(([n,la,lo])=>{
+    L.circleMarker([la,lo],{radius:4,color:"#16222e",weight:1.5,fillColor:"#fff",fillOpacity:1})
+     .bindTooltip(n,{permanent:true,direction:"right",offset:[5,0],className:"cl"})
+     .on("click",e=>{L.DomEvent.stop(e);select(L.latLng(la,lo),n)}).addTo(map.cities);
+  });
+  map.on("zoomend",updateLabels);
+  map.on("click",e=>pick(e.latlng));   // tap anywhere: weather for that exact point
+  map.on("mousemove",e=>{map.getContainer().style.cursor=MODE==="oceans"?(isWater(e.latlng)?"pointer":""):zoneAt(e.latlng,true)?"pointer":""});
+  resetView();updateLabels();
+}
+function setSat(on){
+  sat=on;if(map.cur)map.cur.remove();
+  const tk=MODE==="tracks";
+  map.cur=(tk?map.bases.terr:on?map.bases.sat:map.bases.street).addTo(map);map.cur.bringToBack();
+  (on||tk)?map.ref.addTo(map):map.ref.remove();   // satellite imagery has no labels, so add Esri's place-name layer
+  $("bt").innerHTML=on?"<span>🗺️</span><b>Map</b>":"<span>🛰️</span><b>Satellite</b>";
+}
+const resetView=()=>map.fitBounds([[6.5,68],[37.3,97.5]],{padding:[10,10]});
+
+/* ================= BOUNDARY DATA ================= */
+async function loadJSON(urls,test){
+  for(const u of urls){try{const r=await fetch(u);if(!r.ok)continue;const j=await r.json();if(test(j))return j}catch(e){}}
+  return null;
+}
+
+/* ================= DETAIL FETCH + PANEL ================= */
+const sheet=$("sheet");
+const openSheet=(h,big)=>{sheet.classList.toggle("big",!!big);$("sbody").innerHTML=h;sheet.style.transform="";sheet.classList.add("open")};
+const closeSheet=()=>{sheet.classList.remove("open");sheet.style.transform="";if(hl){map.removeLayer(hl);hl=null}};
+function nearestCity(ll){let b=null,bd=1e9;
+  ALLC.forEach(c=>{const d=turf.distance([ll.lng,ll.lat],[c[2],c[1]]);if(d<bd){bd=d;b=c[0]}});return[b,Math.round(bd)]}
+/* Reverse geocoding: names the tapped village/town/city and its state. Esri first, BigDataCloud as backup. Never throws. */
+const placeCache={};
+async function placeInfo(ll){
+  const key=ll.lat.toFixed(3)+","+ll.lng.toFixed(3);if(key in placeCache)return placeCache[key];
+  const get=async u=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),5000);
+    try{const r=await fetch(u,{signal:c.signal});return r.ok?await r.json():null}catch(e){return null}finally{clearTimeout(t)}};
+  let out=null;
+  const e=await get(`https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?f=json&featureTypes=Locality&langCode=en&location=${ll.lng},${ll.lat}`);
+  const a=e&&!e.error&&e.address;
+  if(a&&(a.City||a.Match_addr))out={name:a.City||a.Match_addr,district:a.Subregion||"",state:a.Region||"",country:""};
+  const b=await get(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${ll.lat}&longitude=${ll.lng}&localityLanguage=en`);
+  if(b){out=out||{name:b.locality||b.city||"",district:"",state:"",country:""};
+    out.state=out.state||b.principalSubdivision||"";out.country=b.countryName||"";out.name=out.name||b.locality||b.city||""}
+  if(out&&!out.name&&!out.state&&!out.country)out=null;
+  return placeCache[key]=out;
+}
+/* Fallback: which state/country polygon contains the point (same data as the map borders). */
+function polityAt(ll){
+  const pt=turf.point([ll.lng,ll.lat]);
+  for(const z of zones)if(z.on)for(const it of z.items){const bb=it.f._bb;
+    if(ll.lng<bb[0]||ll.lng>bb[2]||ll.lat<bb[1]||ll.lat>bb[3])continue;
+    if((it.lo!=null&&ll.lng<it.lo)||(it.hi!=null&&ll.lng>it.hi))continue;
+    if(turf.booleanPointInPolygon(pt,it.f))return{name:it.name,world:!!it.world}}
+  return null;
+}
+/* One entry point for 'user chose a point': land weather in Roads, marine weather in Oceans, nothing in Tracks. */
+function pick(ll,label,me){if(MODE==="oceans")return selectOcean(ll,label);return select(ll,label,me)}
+async function select(ll,label,me){
+  const tok=++selTok;
+  if(hl)map.removeLayer(hl);
+  hl=L.circleMarker(ll,{radius:9,color:"#fff",weight:3,fillColor:"#0f6b8f",fillOpacity:1}).addTo(map);
+  openSheet('<div class="ld">Loading weather data...</div>');
+  const pt=map.latLngToContainerPoint(ll),H=map.getSize().y;       // keep the chosen point visible above the sheet
+  if(pt.y>H*.5)map.panBy([0,pt.y-H*.3]);
+  const reg=zoneAt(ll);
+  try{const [d,pi]=await Promise.all([getDetail(ll),placeInfo(ll)]);if(tok!==selTok)return;openSheet(panelHTML(d,ll,label,reg,pi,me))}
+  catch(e){if(tok===selTok)openSheet('<div class="ld">Weather data temporarily unavailable</div>')}
+}
+function panelHTML(d,ll,label,reg,pi,me){
+  const c=d.current,h=d.hourly,dd=d.daily,w=WMO[c.weather_code]||["❔","Unknown"];
+  const ic=c.weather_code===0&&!c.is_day?"🌙":w[0];
+  let i0=h.time.findIndex(t=>t>=c.time.slice(0,13)+":00");if(i0<0)i0=0;
+  const f=v=>v==null?"–":Math.round(v),dirs=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+  const vis=h.visibility[i0],pp=h.precipitation_probability[i0],[city,km]=nearestCity(ll);
+  const po=polityAt(ll),state=(pi&&pi.state)||(po&&!po.world?po.name:""),country=(pi&&pi.country)||(po?(po.world?po.name:"India"):"");
+  const title=label||(pi&&pi.name)||(km<=25?city:"")||state||country||"Selected location";
+  const where=[me?"Your location":"",pi&&pi.district,state,country].filter((v,i,a)=>v&&v!==title&&a.indexOf(v)===i).join(", ");
+  const sub=reg?`${CL[reg.cls][0]} zone · similar weather across ≈${Math.round(reg.area/100)*100} km² (${f(reg.mn)}–${f(reg.mx)}°C)`:"";
+  const stat=(a,b)=>`<div><small>${a}</small>${b}</div>`;
+  const day=s=>new Date(s+"T12:00").toLocaleDateString("en-IN",{weekday:"short"});
+  let hrs="";for(let n=i0;n<Math.min(i0+10,h.time.length);n++){const x=WMO[h.weather_code[n]]||["❔",""];
+    hrs+=`<div>${new Date(h.time[n]).toLocaleTimeString("en-IN",{hour:"numeric",hour12:true})}<span>${x[0]}</span><b>${f(h.temperature_2m[n])}°</b><small>${f(h.precipitation_probability[n])}%</small></div>`}
+  let days="";dd.time.forEach((t,n)=>{const x=WMO[dd.weather_code[n]]||["❔",""];
+    days+=`<div>${n?day(t):"Today"}<span>${x[0]}</span><b>${f(dd.temperature_2m_max[n])}°</b><small>${f(dd.temperature_2m_min[n])}° · ${f(dd.precipitation_probability_max[n])}%</small></div>`});
+  return `<div class="hd"><div class="ic">${ic}</div><div><div class="tp">${f(c.temperature_2m)}°C</div><div class="cd">${w[1]} · Feels ${f(c.apparent_temperature)}°</div>${dd.time.length?`<div class="cd">High ${f(dd.temperature_2m_max[0])}° · Low ${f(dd.temperature_2m_min[0])}°</div>`:""}</div>
+   <div class="pl"><b>${esc(title)}</b>${where?`<span>${esc(where)}</span>`:""}${km<=700?`<span>Nearest major city: ${esc(city)} (≈${km} km)</span>`:""}<span>${ll.lat.toFixed(2)}°, ${ll.lng.toFixed(2)}°</span></div></div>
+   ${sub?`<div class="cd" style="margin-top:8px">${esc(sub)}</div>`:""}
+   <div class="st">${stat("Humidity",c.relative_humidity_2m==null?"–":f(c.relative_humidity_2m)+"%")}${stat("Wind",c.wind_speed_10m==null?"–":f(c.wind_speed_10m)+" km/h "+(c.wind_direction_10m==null?"":dirs[Math.round(c.wind_direction_10m/22.5)%16]))}${stat("Cloud cover",c.cloud_cover==null?"–":f(c.cloud_cover)+"%")}${stat("Rain chance",pp==null?"–":f(pp)+"%")}${stat("Precipitation",c.precipitation==null?"–":c.precipitation+" mm")}${stat("Pressure",c.pressure_msl==null?"–":f(c.pressure_msl)+" hPa")}${stat("Visibility",vis==null?"–":(vis/1000).toFixed(1)+" km")}</div>
+   ${hrs?`<div class="sp">Next hours</div><div class="strip">${hrs}</div>`:""}${days?`<div class="sp">7-day forecast</div><div class="strip">${days}</div>`:""}${d._src&&d._src!=="Open-Meteo"?`<div class="src">Primary source unavailable — data from ${esc(d._src)} (no hourly or 7-day forecast)</div>`:""}`;
+}
+/* swipe-down to close */
+(()=>{let y0=null,dy=0;const g=$("grab");
+  g.addEventListener("pointerdown",e=>{y0=e.clientY;dy=0;sheet.classList.add("drag");g.setPointerCapture(e.pointerId)});
+  g.addEventListener("pointermove",e=>{if(y0==null)return;dy=Math.max(0,e.clientY-y0);sheet.style.transform=`translateY(${dy}px)`});
+  const end=()=>{if(y0==null)return;y0=null;sheet.classList.remove("drag");dy>70?closeSheet():sheet.style.transform=""};
+  g.addEventListener("pointerup",end);g.addEventListener("pointercancel",end);
+  $("x").addEventListener("pointerdown",e=>e.stopPropagation());$("x").onclick=closeSheet;})();
+
+/* ================= SEARCH (Open-Meteo geocoding; India results first, then worldwide) ================= */
+(()=>{let tm;const q=$("q"),res=$("res");
+  q.addEventListener("input",()=>{clearTimeout(tm);const v=q.value.trim();if(v.length<2){res.style.display="none";return}
+    tm=setTimeout(async()=>{
+      try{const r=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(v)}&count=10&language=en&format=json`);
+        const j=await r.json(),L1=(j.results||[]).sort((a,b)=>(b.country_code==="IN")-(a.country_code==="IN")).slice(0,8);
+        res.innerHTML=L1.length?L1.map((x,i)=>`<button data-i="${i}">${esc(x.name)}<small>${esc([x.admin2,x.admin1,x.country].filter(Boolean).join(", "))}</small></button>`).join(""):'<button disabled>No matches</button>';
+        res.style.display="block";
+        res.querySelectorAll("button[data-i]").forEach(b=>b.onclick=()=>{const x=L1[b.dataset.i],ll=L.latLng(x.latitude,x.longitude);
+          res.style.display="none";q.value=x.name;q.blur();map.flyTo(ll,/^ADM1/.test(x.feature_code||"")?7:9,{duration:.9});pick(ll,x.name)});
+      }catch(e){res.innerHTML='<button disabled>Search unavailable</button>';res.style.display="block"}
+    },300)});
+  document.addEventListener("click",e=>{if(!$("sw").contains(e.target))res.style.display="none"});})();
+
+/* ================= CURRENT LOCATION ================= */
+function locate(){
+  return new Promise((res,rej)=>{
+    if(!navigator.geolocation){toast("Location is not available in this browser");return rej()}
+    navigator.geolocation.getCurrentPosition(p=>{
+      const ll=L.latLng(p.coords.latitude,p.coords.longitude);
+      if(map.me)map.removeLayer(map.me);
+      map.me=L.circleMarker(ll,{radius:8,color:"#fff",weight:3,fillColor:"#2563eb",fillOpacity:1,interactive:false}).addTo(map);
+      res(ll);
+    },err=>{toast(err.code===1?"Location permission denied":"Could not get your location");rej()},{enableHighAccuracy:true,timeout:12000,maximumAge:60000});
+  });
+}
+
+/* ================= ROUTE PLANNER (driving route via the public OSRM server) ================= */
+const RT={from:null,to:null};let routeLayer=null;
+const isPlace=x=>/^PPL/.test(x.feature_code||"");   // populated places only: cities, towns, villages (no streets/buildings)
+const placeSub=x=>[x.admin2,x.admin1,x.country].filter(Boolean).join(", ");
+async function placeSearch(v){
+  try{const r=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(v)}&count=15&language=en&format=json`);
+    const j=await r.json();return(j.results||[]).filter(isPlace).sort((a,b)=>(b.country_code==="IN")-(a.country_code==="IN")).slice(0,6)}
+  catch(e){return[]}
+}
+const checkGo=()=>{$("rgo").disabled=!($("rfrom").value.trim()&&$("rto").value.trim())};
+function suggest(input,list,key){
+  let tm;
+  input.addEventListener("input",()=>{RT[key]=null;checkGo();clearTimeout(tm);const v=input.value.trim();
+    if(v.length<2){list.style.display="none";return}
+    tm=setTimeout(async()=>{
+      const r=await placeSearch(v);
+      list.innerHTML=r.length?r.map((x,i)=>`<button type="button" data-i="${i}">${esc(x.name)}<small>${esc(placeSub(x))}</small></button>`).join(""):'<button type="button" disabled>No city, town or village found</button>';
+      list.style.display="block";
+      list.querySelectorAll("button[data-i]").forEach(b=>b.onclick=()=>{const x=r[b.dataset.i];
+        RT[key]={name:x.name,lat:x.latitude,lng:x.longitude};input.value=x.name;list.style.display="none";checkGo()});
+    },300);
+  });
+}
+function openRoute(){$("rtmodal").hidden=false;$("rclr").hidden=!routeLayer;$("rmsg").textContent="";setTimeout(()=>$("rfrom").focus(),50)}
+function closeRoute(){$("rtmodal").hidden=true;$("sgf").style.display=$("sgt").style.display="none"}
+function clearRoute(silent){if(routeLayer){map.removeLayer(routeLayer);routeLayer=null}if(!silent)closeSheet()}
+async function goRoute(){
+  const msg=$("rmsg"),go=$("rgo");msg.textContent="";go.disabled=true;go.textContent="Finding route...";
+  try{
+    for(const k of["from","to"])if(!RT[k]){   // typed but not picked from the list: use the best match
+      const v=$(k==="from"?"rfrom":"rto").value.trim(),r=await placeSearch(v);
+      if(!r.length)throw new Error(`Couldn't find "${v}" as a city, town or village`);
+      RT[k]={name:r[0].name,lat:r[0].latitude,lng:r[0].longitude};
+    }
+    const a=RT.from,b=RT.to;
+    const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`);
+    const j=await r.json();
+    if(j.code!=="Ok"||!j.routes.length)throw new Error("No driving route found between these places");
+    closeRoute();showRoute(a,b,j.routes[0]);
+  }catch(e){msg.textContent=e instanceof TypeError?"Route service unavailable. Try again later.":e.message}
+  finally{go.textContent="Show route";checkGo()}
+}
+/* Draw the road as a white-cased blue line with start/end markers, then summarise it in the bottom sheet. */
+function showRoute(a,b,rt){
+  clearRoute(true);
+  const ll=rt.geometry.coordinates.map(c=>[c[1],c[0]]),dot=(p,c)=>L.circleMarker([p.lat,p.lng],{radius:8,color:"#fff",weight:3,fillColor:c,fillOpacity:1}).bindTooltip(p.name,{permanent:true,direction:"top",offset:[0,-8],className:"rl"});
+  routeLayer=L.layerGroup([L.polyline(ll,{color:"#fff",weight:10,opacity:.95,lineJoin:"round"}),L.polyline(ll,{color:"#1d4ed8",weight:5,lineJoin:"round"}),dot(a,"#16a34a"),dot(b,"#dc2626")]).addTo(map);
+  map.fitBounds(L.latLngBounds(ll),{paddingTopLeft:[20,80],paddingBottomRight:[20,Math.round(innerHeight*.52)]});
+  routeSheet(a,b,rt,ll);
+}
+const CAR={solarArea:2.5,solarEff:.22,solarDerate:.85,      // m², panel efficiency, temperature/MPPT/dirt losses
+  turbArea:.3,turbCp:.3,turbEta:.85,turbCt:.8,turbCut:3,turbRated:500,heightFactor:.7,  // m², power coeff, generator eff, thrust coeff, cut-in m/s, rated W, 10 m→car height wind
+  tegHeatW:4200,tegCapture:.6,tegEff:.04,warmMin:5};         // motor 3 kW + inverter 1.2 kW waste heat, share of heat the TEGs touch, TEG efficiency, warm-up minutes
+const carHav=(a,b)=>{const dLa=(b[0]-a[0])*R,dLo=(b[1]-a[1])*R,x=Math.sin(dLa/2)**2+Math.cos(a[0]*R)*Math.cos(b[0]*R)*Math.sin(dLo/2)**2;return 12742000*Math.asin(Math.sqrt(x))};
+const carBearing=(a,b)=>{const dl=(b[1]-a[1])*R,y=Math.sin(dl)*Math.cos(b[0]*R),x=Math.cos(a[0]*R)*Math.sin(b[0]*R)-Math.sin(a[0]*R)*Math.cos(b[0]*R)*Math.cos(dl);return(Math.atan2(y,x)/R+360)%360};
+const fmtW=w=>w>=1000?(w/1000).toFixed(2)+" kW":Math.round(w)+" W",fmtE=e=>e>=1000?(e/1000).toFixed(2)+" kWh":Math.round(e)+" Wh";
+async function carEstimate(ll,distM,durS){
+  const hrs=durS/3600,v=distM/durS;                                           // trip hours, average car speed (m/s)
+  // heat (TEG): fixed estimate from motor + inverter waste heat, minus warm-up time
+  const tegP=CAR.tegHeatW*CAR.tegCapture*CAR.tegEff,tegH=Math.max(0,hrs-CAR.warmMin/60),tegE=tegP*tegH;
+  const out={heat:{p:tegP,e:tegE,avg:tegE/hrs},hrs,v,wx:null};
+  // sample the route: n points at the middle of n equal-length pieces, each with its travel direction
+  const cum=[0];for(let i=1;i<ll.length;i++)cum.push(cum[i-1]+carHav(ll[i-1],ll[i]));
+  const total=cum[cum.length-1],n=Math.max(3,Math.min(15,Math.round(total/40000))),P=[];
+  for(let s=0;s<n;s++){let k=cum.findIndex(c=>c>=(s+.5)/n*total);if(k<1)k=1;
+    P.push({p:ll[k],hd:carBearing(ll[Math.max(0,k-3)],ll[Math.min(ll.length-1,k+3)])})}
+  try{
+    const u=`https://api.open-meteo.com/v1/forecast?latitude=${P.map(x=>x.p[0].toFixed(3)).join(",")}&longitude=${P.map(x=>x.p[1].toFixed(3)).join(",")}&hourly=temperature_2m,weather_code,precipitation,shortwave_radiation,wind_speed_10m,wind_direction_10m,is_day&wind_speed_unit=ms&forecast_days=3&timezone=GMT`;
+    const r=await fetch(u,{signal:AbortSignal.timeout?AbortSignal.timeout(15000):undefined});if(!r.ok)throw 0;let j=await r.json();if(!Array.isArray(j))j=[j];
+    const now=Date.now(),segH=hrs/n;let sE=0,wE=0,dragE=0,day=0,ghiSum=0,ghiN=0,vaxSum=0,wdSum=0,rain=0;
+    const pick=(h,t)=>Math.max(0,Math.min(h.time.length-1,Math.round((t-Date.parse(h.time[0]+"Z"))/36e5)));
+    P.forEach((q,s)=>{
+      const h=j[s].hourly,t=now+(s+.5)/n*durS*1000,i=pick(h,t);q.i=i;q.h=h;
+      // SOLAR: horizontal panels, so use global horizontal irradiance; zero after dark
+      const isDay=h.is_day[i]===1,ghi=isDay?h.shortwave_radiation[i]:0;
+      if(isDay){day++;ghiSum+=ghi;ghiN++}
+      sE+=ghi*CAR.solarArea*CAR.solarEff*CAR.solarDerate*segH;
+      // WIND: wind blows FROM wd. Component of wind along our heading (+ = tailwind), then airflow through the rotor = car speed − that.
+      const wsRaw=h.wind_speed_10m[i],ws=wsRaw*CAR.heightFactor,wd=h.wind_direction_10m[i]*R,hr=q.hd*R;
+      const along=-ws*(Math.sin(wd)*Math.sin(hr)+Math.cos(wd)*Math.cos(hr)),vax=Math.max(0,v-along);
+      const pr=h.precipitation[i]||0,rf=pr>=2.5?.85:pr>=.5?.93:1;               // rain slightly lowers turbine output
+      if(pr>=.5)rain++;
+      let pw=0,pd=0;
+      if(wsRaw<=20&&vax>=CAR.turbCut){                                           // cut-in, and cut-out in storm winds
+        pw=Math.min(CAR.turbRated,.5*1.2*CAR.turbArea*CAR.turbCp*CAR.turbEta*vax**3)*rf;
+        pd=.5*1.2*CAR.turbArea*CAR.turbCt*vax**2*v;                              // extra drag power the turbines cost
+      }
+      wE+=pw*segH;dragE+=pd*segH;vaxSum+=vax;wdSum+=along;
+    });
+    out.wx={n,dayShare:day/n,startDay:j[0].hourly.is_day[P[0].i]===1,ghi:ghiN?ghiSum/ghiN:0,
+      solar:{e:sE,avg:sE/hrs},wind:{e:wE,avg:wE/hrs,drag:dragE/hrs,vax:vaxSum/n,along:wdSum/n,rain:rain/n},
+      ends:[0,n-1].map(k=>{const h=P[k].h,i=P[k].i;return`${(WMO[h.weather_code[i]]||["❔"])[0]} ${Math.round(h.temperature_2m[i])}°C`})};
+  }catch(e){console.error(e)}
+  return out;
+}
+async function routeSheet(a,b,rt,ll){
+  if(MODE!=="roads")return;                      // energy estimate is a Roads-only feature
+  const tok=++selTok;if(hl){map.removeLayer(hl);hl=null}
+  openSheet('<div class="ld">Estimating power generation along the route...</div>',true);
+  const km=Math.round(rt.distance/1000),m=Math.round(rt.duration/60),dur=m>=60?`${Math.floor(m/60)} h ${m%60} min`:`${m} min`;
+  const E=await carEstimate(ll,rt.distance,rt.duration);if(tok!==selTok)return;
+  const w=E.wx,card=(t,big,l1,l2)=>`<div class="pc${t==="Total"?" tot":""}"><b>${t}</b><big>${big}</big><small>${l1}</small><small>${l2||""}</small></div>`;
+  let sol,wnd;
+  if(w){
+    const sd=w.dayShare;
+    sol=card("☀️ Solar",fmtW(w.solar.avg),`${fmtE(w.solar.e)} over the trip`,sd===0?"🌙 Night for the whole trip: no solar power":`${w.startDay?"Starts in daylight":"Starts at night"} · ${Math.round(sd*100)}% of trip in daylight · avg sun ${Math.round(w.ghi)} W/m²`);
+    const wd=w.wind;
+    wnd=card("💨 Wind",fmtW(wd.avg),`${fmtE(wd.e)} over the trip`,`Rotor airflow ≈ ${wd.vax.toFixed(1)} m/s · ${wd.along>=0?"tailwind":"headwind"} ${Math.abs(wd.along).toFixed(1)} m/s${wd.rain>0?` · rain on ${Math.round(wd.rain*100)}% of route`:""}${wd.drag>1?` · turbine drag ≈ ${fmtW(wd.drag)}`:""}`);
+  }else{sol=card("☀️ Solar","–","Live weather unavailable","Can't estimate right now");wnd=card("💨 Wind","–","Live weather unavailable","Can't estimate right now")}
+  const heat=card("🔥 Heat (TEG)",fmtW(E.heat.avg),`${fmtE(E.heat.e)} over the trip`,`Fixed estimate ≈ ${Math.round(E.heat.p)} W while driving (motor + inverter heat)`);
+  const totE=(w?w.solar.e+w.wind.e:0)+E.heat.e,totP=(w?w.solar.avg+w.wind.avg:0)+E.heat.avg;
+  const tot=card("Total",fmtW(totP),`${fmtE(totE)} over the trip`,w?"Solar + wind + heat":"Heat only (no live weather)");
+  openSheet(`<div class="hd"><div class="ic">🧭</div><div><div class="tp">${km} km</div><div class="cd">About ${dur} by road</div></div>
+   <div class="pl"><b>${esc(a.name)} → ${esc(b.name)}</b>${w?`<span>${esc(w.ends[0])} near start · ${esc(w.ends[1])} near end</span>`:""}</div></div>
+   <div class="pw">${sol}${wnd}${heat}${tot}</div>
+   <div class="fn">Estimated generation while travelling. Solar and wind use live forecasts for the time you reach each part of the road, with the wind measured against your direction of travel. Heat is a fixed estimate. Assumes ${CAR.solarArea} m² solar panels (${Math.round(CAR.solarEff*100)}%), ${CAR.turbArea} m² turbines, and TEGs on the motor and inverter. Wind figures are gross output and don't subtract the extra drag.</div>
+   <button id="rtclear" type="button" class="chip">Clear route</button>`,true);
+  $("rtclear").onclick=()=>clearRoute();
+}
+suggest($("rfrom"),$("sgf"),"from");suggest($("rto"),$("sgt"),"to");
+$("rtbtn").onclick=openRoute;$("rtx").onclick=closeRoute;$("rgo").onclick=goRoute;$("rclr").onclick=()=>{clearRoute();closeRoute()};
+$("ruse").onclick=()=>locate().then(ll=>{RT.from={name:"Your location",lat:ll.lat,lng:ll.lng};$("rfrom").value="Your location";checkGo()}).catch(()=>{});
+$("rtmodal").addEventListener("click",e=>{if(e.target===$("rtmodal"))closeRoute()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("rtmodal").hidden)closeRoute()});
+document.addEventListener("click",e=>{if(!e.target.closest(".fld"))$("sgf").style.display=$("sgt").style.display="none"});
+[$("rfrom"),$("rto")].forEach(i=>i.addEventListener("keydown",e=>{if(e.key==="Enter"&&!$("rgo").disabled)goRoute()}));
+
+/* ================= NIGHT SHADING (from the sun's position, covers land and oceans) ================= */
+const NT={ov:null};
+function drawNight(){
+  const now=new Date(),yT=mercY(85),w=720,dy=.5*R,h=Math.ceil(2*yT/dy);
+  const N=(now-Date.UTC(now.getUTCFullYear(),0,0))/864e5,B=2*Math.PI*(N-81)/364;
+  const eot=9.87*Math.sin(2*B)-7.53*Math.cos(B)-1.5*Math.sin(B);               // equation of time (minutes)
+  const dec=23.44*R*Math.sin(2*Math.PI*(N-81)/365),utc=now.getUTCHours()+now.getUTCMinutes()/60;
+  const subLon=-15*(utc-12+eot/60),sd=Math.sin(dec),cd=Math.cos(dec);          // longitude where the sun is overhead
+  const c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d"),im=x.createImageData(w,h);
+  for(let j=0;j<h;j++){
+    const lat=invY(yT-(j+.5)*dy)*R,sl=Math.sin(lat)*sd,cl=Math.cos(lat)*cd;
+    for(let i=0;i<w;i++){
+      const lon=-180+(i+.5)*360/w,alt=Math.asin(Math.max(-1,Math.min(1,sl+cl*Math.cos((lon-subLon)*R))))/R;
+      const t=Math.max(0,Math.min(1,(4-alt)/14)),k=(j*w+i)*4;                  // smooth twilight: lit above 4°, dark below −10°
+      im.data[k]=8;im.data[k+1]=14;im.data[k+2]=44;im.data[k+3]=Math.round(t*t*(3-2*t)*150);
+    }
+  }
+  x.putImageData(im,0,0);
+  const url=c.toDataURL("image/png"),b=[[invY(yT-h*dy),-180],[85,180]];
+  if(NT.ov){NT.ov.setUrl(url);NT.ov.setBounds(b)}else NT.ov=L.imageOverlay(url,b,{pane:"night",interactive:false});
+  applyLayers();
+}
+
+/* ================= OCEANS MODE + MODE SWITCHING =================
+   Everything below is additive: Roads code above is only gated by MODE. The ocean view reuses the same Leaflet map,
+   the same weather palette (CL/ptCat), the same bottom sheet, and Zone.prototype.modeFilter for smoothing. */
+let _wr;const worldReady=new Promise(r=>{_wr=r});
+const MARINE_URLS=[
+ "https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/ne_110m_geography_marine_polys.geojson",
+ "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_geography_marine_polys.geojson"];
+let marine=null,marineP=null;
+const OC={on:false,pts:[],have:new Set(),ov:null,ship:null,mask:null,samples:null,busy:false,fail:false,last:0,step:.8,sc:2,tok:0};
+const bbOf=f=>f._bb||(f._bb=turf.bbox(f));
+const inFeat=(f,ll)=>{const b=bbOf(f);if(ll.lng<b[0]||ll.lng>b[2]||ll.lat<b[1]||ll.lat>b[3])return false;return turf.booleanPointInPolygon(turf.point([ll.lng,ll.lat]),f)};
+const isLand=ll=>!!world&&world.features.some(f=>inFeat(f,ll));
+/* water = not land. (Marine-region polygons are only used for names: they don't cover every sea, which left gaps in the weather.) */
+const isWater=ll=>!isLand(ll);
+/* Smallest marine region containing the point = most specific name (e.g. Arabian Sea rather than Indian Ocean). */
+function seaName(ll){
+  if(!marine)return"";let best=null,ba=1e9;
+  for(const f of marine.features){if(!inFeat(f,ll))continue;const b=bbOf(f),a=(b[2]-b[0])*(b[3]-b[1]);if(a<ba){ba=a;best=f}}
+  const p=best&&best.properties;return p?(p.name_en||p.NAME_EN||p.name||p.NAME||""):"";
+}
+
+/* ---- sample points: coarse lattice first (tier 0), then finer, then dense boxes over narrow seas ---- */
+const DENSE=[[-6,30,36,46,2.5],[32,11,57,30,2],[55,5,100,25,4],[99,0,142,42,3],[-98,8,-60,30,3.5],[-5,51,30,66,2.5],[27,41,42,47,2],[105,-10,135,8,3]];
+function ocSamples(){
+  const out=[],seen=new Set(),add=(la,lo,t)=>{const k=la.toFixed(1)+","+lo.toFixed(1);if(seen.has(k))return;seen.add(k);if(isWater({lat:la,lng:lo}))out.push({la,lo,t})};
+  for(let i=0;-72+8*i<=80;i++)for(let j=0;j<45;j++)add(-72+8*i,-176+8*j,(i%2===0&&j%2===0)?0:1);
+  DENSE.forEach(([W,S,E,N,s])=>{for(let la=S;la<=N;la+=s)for(let lo=W;lo<=E;lo+=s)add(la,lo,2)});
+  return out.sort((a,b)=>a.t-b.t);
+}
+function ocInitGrid(){
+  const R_=OC,step=OC.step;R_.gw=Math.round(360/step);R_.dY=step*R;R_.yTop=mercY(85);R_.gh=Math.ceil(2*R_.yTop/R_.dY);
+  R_.rowLat=Array.from({length:R_.gh},(_,j)=>invY(R_.yTop-(j+.5)*R_.dY));
+  R_.bounds=[[invY(R_.yTop-R_.gh*R_.dY),-180],[85,180]];
+}
+function ocBuildMask(){
+  const {gw,gh,sc,yTop,dY}=OC,w=gw*sc,h=gh*sc,c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d");
+  const X=lo=>(lo+180)/360*w,Y=la=>(yTop-mercY(Math.max(-85.05,Math.min(85.05,la))))/(gh*dY)*h;
+  const draw=fs=>fs.forEach(f=>{const g=f.geometry,ps=g.type==="Polygon"?[g.coordinates]:g.type==="MultiPolygon"?g.coordinates:[];
+    ps.forEach(poly=>{x.beginPath();poly.forEach(r=>r.forEach(([lo,la],n)=>n?x.lineTo(X(lo),Y(la)):x.moveTo(X(lo),Y(la))));x.fill("evenodd")})});
+  x.fillStyle="#000";
+  x.fillRect(0,0,w,h);
+  x.globalCompositeOperation="destination-out";draw(world.features);
+  return c;
+}
+
+/* ---- load (progressive, cached) ---- */
+async function ocLoad(force){
+  if(OC.busy||!OC.samples)return;OC.busy=true;OC.fail=false;setStatus("load");
+  const key="iwm4_ocean";
+  try{
+    if(!force){try{const c=JSON.parse(localStorage.getItem(key)||"null");
+      if(c&&Date.now()-c.t<TTL&&c.pts&&c.pts.length>50){OC.pts=c.pts;OC.last=c.t;OC.have=new Set(c.pts.map(p=>p.lat+","+p.lon));ocRender();return}}catch(e){}}
+    if(force){OC.have=new Set();}
+    const todo=OC.samples.filter(s=>!OC.have.has(s.la+","+s.lo));let got=force?[]:OC.pts.slice(),first=true,all=true;
+    for(let k=0;k<todo.length;k+=CHUNK){
+      if(MODE!=="oceans"){all=false;break}                      // user left Oceans: stop requesting
+      if(!first)await sleep(4000);first=false;
+      const ch=todo.slice(k,k+CHUNK);
+      try{(await fetchChunk(ch.map(s=>[s.la,s.lo]),"sea-grid")).forEach((o,i)=>{const c=o.current;
+        if(c&&c.temperature_2m!=null){const p={lat:ch[i].la,lon:ch[i].lo,t:c.temperature_2m,code:c.weather_code,pr:c.precipitation||0,cl:c.cloud_cover||0,day:c.is_day};p.k=ptCat(p);got.push(p);OC.have.add(p.lat+","+p.lon)}})}
+      catch(e){OC.fail=true;all=false}
+      OC.pts=got.slice();if(got.length)ocRender();
+    }
+    if(!got.length)throw new Error("no data");
+    if(all){OC.last=Date.now();try{localStorage.setItem(key,JSON.stringify({t:OC.last,pts:OC.pts}))}catch(e){}}
+    else if(!OC.last&&got.length)OC.last=Date.now();
+  }catch(e){console.error(e);OC.fail=true}
+  finally{OC.busy=false;ocSyncStatus()}
+}
+/* IDW over a spatial hash (8° bins) -> weather type per cell -> mode filter -> paint -> clip to water. */
+function ocRender(){
+  const pts=OC.pts;if(!pts.length||!OC.mask)return;
+  const {gw,gh,step}=OC,raw=new Uint8Array(gw*gh),BN=8,NX=45,NY=23,bins=Array.from({length:NX*NY},()=>[]);
+  pts.forEach((p,n)=>bins[Math.min(NY-1,Math.max(0,Math.floor((p.lat+90)/BN)))*NX+Math.min(NX-1,Math.max(0,Math.floor((p.lon+180)/BN)))].push(n));
+  const D=[0,0,0,0],I=[0,0,0,0];
+  for(let j=0;j<gh;j++){const lat=OC.rowLat[j],kx=Math.cos(lat*R),by=Math.min(NY-1,Math.max(0,Math.floor((lat+90)/BN)));
+    for(let i=0;i<gw;i++){
+      const lon=-180+(i+.5)*step,bx=Math.floor((lon+180)/BN);
+      const scan=r=>{D.fill(1e9);for(let dy=-r;dy<=r;dy++){const y=by+dy;if(y<0||y>=NY)continue;
+        for(let dx=-r;dx<=r;dx++)for(const n of bins[y*NX+(((bx+dx)%NX)+NX)%NX]){const p=pts[n];let dl=Math.abs(p.lon-lon);if(dl>180)dl=360-dl;
+          const a=dl*kx,b=p.lat-lat,d=a*a+b*b;
+          if(d<D[3]){let m=3;while(m>0&&D[m-1]>d){D[m]=D[m-1];I[m]=I[m-1];m--}D[m]=d;I[m]=n}}}};
+      scan(2);if(D[3]>=1e9)scan(6);if(D[3]>=1e9)scan(23);
+      const V=[0,0,0,0,0,0,0];let sw=0,cl=0;
+      for(let m=0;m<4;m++){if(D[m]>=1e9)continue;const p=pts[I[m]],w=1/(D[m]+.05);sw+=w;cl+=w*p.cl;V[p.k]+=w}
+      let best=-1,bv=0;
+      for(const k of [K.STM,K.SNW,K.RAIN,K.DRZ])if(V[k]>=.4*sw&&V[k]>bv){best=k;bv=V[k]}
+      if(best<0&&V[K.RAIN]+V[K.DRZ]>=.5*sw)best=V[K.RAIN]>=V[K.DRZ]?K.RAIN:K.DRZ;
+      if(best<0)best=cl/sw>=55?K.CLD:(V[K.NIT]>V[K.SUN]?K.NIT:K.SUN);
+      raw[j*gw+i]=best;
+    }}
+  const g={gw,gh},cls=Zone.prototype.modeFilter.call(g,Zone.prototype.modeFilter.call(g,raw,3),2);
+  const s=document.createElement("canvas");s.width=gw;s.height=gh;const sx=s.getContext("2d"),im=sx.createImageData(gw,gh);
+  const rgb=CL.map(c=>[1,3,5].map(o=>parseInt(c[1].substr(o,2),16)));
+  for(let k=0;k<gw*gh;k++){const c=rgb[cls[k]];im.data.set([c[0],c[1],c[2],cls[k]===K.NIT?0:255],k*4)}
+  sx.putImageData(im,0,0);
+  const o=document.createElement("canvas");o.width=gw*OC.sc;o.height=gh*OC.sc;const oc=o.getContext("2d");
+  oc.imageSmoothingEnabled=true;oc.imageSmoothingQuality="high";oc.drawImage(s,0,0,o.width,o.height);
+  oc.globalCompositeOperation="destination-in";oc.drawImage(OC.mask,0,0);
+  const url=o.toDataURL("image/png");
+  if(OC.ov)OC.ov.setUrl(url);else OC.ov=L.imageOverlay(url,OC.bounds,{pane:"wx",opacity:.62,interactive:false});
+  ocApply();
+}
+function ocSyncStatus(){
+  if(OC.busy)return;$("ref").classList.remove("spin");
+  if(OC.pts.length){setStatus("ok");if(OC.fail)toast("Some ocean areas could not be loaded")}
+  else{setStatus("err");toast("Ocean weather temporarily unavailable")}
+}
+
+/* ---- shipping corridors: curated waypoint chains through open water (schematic, NOT live vessel positions) ---- */
+const SH={
+ cn:[[31.0,122.8],[30.5,123.2],[26.5,125.5],[22.0,123.6],[20.5,121.3],[19.5,119.0],[15.0,116.0],[10.5,112.5],[6.0,108.0],[3.0,105.5],[1.4,104.3],[1.17,104.2],[1.12,103.8]],
+ hk:[[19.5,115.5],[21.6,114.4]],
+ mal:[[1.12,103.8],[1.5,102.9],[2.5,101.2],[4.5,99.3],[6.0,97.5],[6.4,95.0],[6.0,92.5],[5.4,86.0],[5.0,81.0]],
+ chn:[[5.4,86.0],[10.0,82.5],[13.0,80.8]],kol:[[13.0,81.6],[16.0,83.0],[20.5,87.5],[20.9,88.1]],
+ col:[[5.0,81.0],[5.6,79.6],[6.9,79.5]],
+ aden:[[5.0,81.0],[7.0,72.0],[10.0,62.0],[13.5,54.0],[12.5,49.0],[12.2,44.2],[12.55,43.45],[13.5,42.6],[15.0,41.4],[18.0,40.0],[20.0,38.8],[22.0,37.8],[24.0,36.8],[26.0,35.3],[27.4,34.0],[28.5,33.2],[29.3,32.6],[29.93,32.55]],
+ suez:[[29.93,32.55],[30.5,32.35],[31.27,32.32],[32.0,32.3]],
+ med:[[32.0,32.3],[33.8,25.0],[34.5,20.0],[35.4,15.0],[36.9,12.0],[37.5,10.0],[38.0,7.0],[37.8,3.0],[36.3,-1.5],[35.9,-4.0],[35.97,-5.45],[35.9,-6.5]],
+ atl:[[35.9,-6.5],[36.3,-9.8],[38.7,-10.0],[43.2,-10.0],[45.5,-6.0],[48.5,-6.0],[49.3,-5.0],[49.8,-3.0],[50.0,-1.0],[50.5,0.8],[51.0,1.6],[51.9,3.2],[52.0,3.5]],
+ mum:[[19.0,71.0],[21.0,65.0],[24.0,60.5],[25.5,57.3],[26.65,56.4],[26.1,55.0],[26.7,52.5],[27.2,51.8],[28.0,50.5],[28.9,49.5]],
+ mumA:[[19.0,71.0],[15.0,65.0],[13.5,54.0]],
+ cape:[[5.0,81.0],[-5.0,70.0],[-15.0,55.0],[-29.0,46.0],[-36.5,20.0],[-35.5,17.5],[-33.0,12.0],[-20.0,5.0],[-5.0,-5.0],[4.0,-12.0],[8.0,-18.0],[14.0,-20.0],[20.0,-19.5],[28.5,-19.0],[35.0,-13.0],[36.3,-9.8]],
+ fre:[[-36.5,20.0],[-40.0,60.0],[-38.0,100.0],[-35.5,113.5],[-33.0,114.6],[-32.1,115.2]],
+ nat:[[49.3,-5.0],[49.0,-8.0],[48.0,-25.0],[45.5,-45.0],[42.0,-60.0],[40.2,-70.0],[40.2,-73.8]],
+ natS:[[36.3,-9.8],[35.0,-27.0],[37.5,-45.0],[39.5,-60.0],[40.2,-70.0]],
+ pan:[[36.3,-9.8],[35.5,-12.0],[25.0,-40.0],[22.0,-55.0],[20.0,-64.0],[21.5,-68.0],[20.0,-73.8],[17.5,-74.5],[14.0,-77.5],[11.0,-79.5],[9.65,-79.9]],
+ pcan:[[9.65,-79.9],[9.36,-79.9],[9.0,-79.6],[8.6,-79.5]],
+ pacS:[[8.6,-79.5],[7.5,-79.6],[6.0,-81.5],[-5.0,-82.0],[-12.0,-78.2],[-20.0,-71.5],[-33.0,-72.5]],
+ pacN:[[7.5,-79.6],[6.8,-80.9],[7.0,-82.5],[8.0,-83.0],[11.5,-90.0],[14.5,-98.0],[22.0,-111.0],[25.0,-112.5],[33.5,-118.5]],
+ tp:[[33.6,-118.6],[37.0,-140.0],[44.0,-165.0],[45.0,-180.0],[43.0,172.0],[38.0,155.0],[34.5,141.5]],
+ tpS:[[34.5,141.5],[32.0,134.5],[29.8,131.5],[29.0,128.5],[28.5,126.0],[30.5,123.0],[31.0,122.8]]
+};
+const ROUTES=[["cn","mal","aden","suez","med","atl"],["mal","chn"],["chn","kol"],["mal","col"],["hk"],["mum"],["mumA"],["cape"],["fre"],["nat"],["natS"],["pan","pcan","pacS"],["pcan","pacN"],["tp","tpS"]]
+ .map(r=>r.reduce((a,k)=>a.concat(SH[k]),[]));
+const PORTS=[[31.0,122.0],[22.3,114.2],[1.26,103.8],[6.93,79.84],[18.95,72.85],[13.1,80.3],[22.0,88.1],[25.0,55.0],[31.27,32.32],[29.93,32.55],[51.95,4.05],[40.6,-74.0],[9.36,-79.9],[8.95,-79.57],[33.7,-118.3],[35.4,139.7],[-33.9,18.4],[-32.05,115.7],[-33.0,-71.6],[-12.05,-77.15],[36.1,-5.35]];
+function shipLayer(){
+  if(OC.ship)return OC.ship;
+  if(!map.getPane("ship")){const p=map.createPane("ship");p.style.zIndex=340;p.style.pointerEvents="none"}
+  const g=L.layerGroup(),mk=(ll,o)=>L.polyline(ll,Object.assign({pane:"ship",interactive:false,lineJoin:"round",lineCap:"round",smoothFactor:1.5},o));
+  OC.casing=[];OC.lines=[];
+  ROUTES.forEach(r0=>splitAM(r0).forEach(r=>{const c=mk(r,{color:"#fff",opacity:.55,weight:3.4}),l=mk(r,{color:"#c2255c",opacity:.95,weight:1.5});OC.casing.push(c);OC.lines.push(l);g.addLayer(c);g.addLayer(l)}));
+  PORTS.forEach(p=>g.addLayer(L.circleMarker(p,{pane:"ship",interactive:false,radius:3,weight:1.2,color:"#c2255c",fillColor:"#fff",fillOpacity:1})));
+  OC.ship=g;ocZoomStyle();return g;
+}
+function ocZoomStyle(){if(!OC.lines)return;const z=map.getZoom(),w=z<4?1.2:z<6?1.7:2.3;OC.lines.forEach(l=>l.setStyle({weight:w}));OC.casing.forEach(l=>l.setStyle({weight:w+2}))}
+function ocApply(){
+  const on=MODE==="oceans";
+  if(on&&F.sr)shipLayer();
+  if(OC.ov)(on&&F.ow)?OC.ov.addTo(map):map.removeLayer(OC.ov);
+  if(OC.ship)(on&&F.sr)?OC.ship.addTo(map):map.removeLayer(OC.ship);
+  if(OC.rt)on?OC.rt.addTo(map):map.removeLayer(OC.rt);
+}
+
+/* ================= SHIP ROUTE PLANNER (Oceans mode) =================
+   Ports come from the built-in list below (searchable). The route is found with A* over a 0.5° water grid rasterised
+   from the same land outlines as the map, with canals/straits opened by hand-placed "gates" and polar rows closed.
+   Result is indicative only (coarse coastlines, no weather/ice/draft limits). */
+const PORTS_DB=`Mumbai|India|18.95|72.85|Bombay
+Nhava Sheva (JNPT)|India|18.95|72.95|Jawaharlal Nehru Port
+Mundra|India|22.74|69.7
+Kandla|India|23.0|70.22|Deendayal
+Pipavav|India|20.9|71.5
+Kochi|India|9.97|76.27|Cochin
+Vizhinjam|India|8.37|76.99
+Mangalore|India|12.92|74.8|Mangaluru
+Mormugao (Goa)|India|15.4|73.8|Goa
+Chennai|India|13.1|80.3|Madras
+Ennore (Kamarajar)|India|13.25|80.33
+Tuticorin|India|8.8|78.2|Thoothukudi
+Krishnapatnam|India|14.25|80.1
+Visakhapatnam|India|17.7|83.3|Vizag
+Kakinada|India|16.95|82.25
+Paradip|India|20.3|86.7
+Haldia|India|22.03|88.1
+Kolkata|India|22.55|88.3|Calcutta
+Port Blair|India|11.67|92.75|Andaman
+Colombo|Sri Lanka|6.95|79.85
+Hambantota|Sri Lanka|6.12|81.1
+Chittagong|Bangladesh|22.3|91.8|Chattogram
+Karachi|Pakistan|24.8|66.97
+Port Qasim|Pakistan|24.77|67.35
+Gwadar|Pakistan|25.1|62.3
+Male|Maldives|4.18|73.5
+Yangon|Myanmar|16.77|96.17|Rangoon
+Singapore|Singapore|1.26|103.82
+Port Klang|Malaysia|3.0|101.4
+Penang|Malaysia|5.42|100.35|George Town
+Tanjung Pelepas|Malaysia|1.36|103.55
+Kota Kinabalu|Malaysia|5.98|116.07
+Belawan (Medan)|Indonesia|3.78|98.7
+Jakarta|Indonesia|-6.1|106.88|Tanjung Priok
+Surabaya|Indonesia|-7.2|112.73
+Laem Chabang|Thailand|13.08|100.88
+Bangkok|Thailand|13.7|100.55
+Ho Chi Minh City|Vietnam|10.77|106.75|Saigon
+Hai Phong|Vietnam|20.85|106.7
+Da Nang|Vietnam|16.1|108.2
+Sihanoukville|Cambodia|10.63|103.5
+Manila|Philippines|14.6|120.95
+Cebu|Philippines|10.3|123.9
+Davao|Philippines|7.07|125.6
+Shanghai|China|31.23|121.5
+Ningbo-Zhoushan|China|29.87|121.85|Ningbo
+Shenzhen|China|22.5|114.1
+Guangzhou|China|23.1|113.4|Canton
+Hong Kong|China|22.3|114.17
+Xiamen|China|24.45|118.07
+Qingdao|China|36.07|120.3
+Tianjin|China|38.98|117.75
+Dalian|China|38.93|121.65
+Kaohsiung|Taiwan|22.6|120.28
+Keelung|Taiwan|25.15|121.75
+Busan|South Korea|35.1|129.04
+Incheon|South Korea|37.45|126.6
+Tokyo|Japan|35.62|139.78
+Yokohama|Japan|35.45|139.65
+Nagoya|Japan|35.05|136.85
+Osaka|Japan|34.65|135.43
+Kobe|Japan|34.67|135.2
+Fukuoka (Hakata)|Japan|33.6|130.4
+Vladivostok|Russia|43.1|131.9
+Dubai (Jebel Ali)|UAE|25.0|55.06|Jebel Ali
+Abu Dhabi (Khalifa)|UAE|24.8|54.65
+Sharjah|UAE|25.36|55.38
+Fujairah|UAE|25.17|56.36
+Muscat|Oman|23.63|58.6
+Sohar|Oman|24.5|56.6
+Salalah|Oman|16.95|54.0
+Doha|Qatar|25.3|51.55
+Dammam|Saudi Arabia|26.5|50.2
+Jubail|Saudi Arabia|27.0|49.65
+Jeddah|Saudi Arabia|21.5|39.15
+Yanbu|Saudi Arabia|24.1|38.05
+Kuwait City|Kuwait|29.35|47.95|Shuwaikh
+Umm Qasr (Basra)|Iraq|30.04|47.93|Basra
+Bandar Abbas|Iran|27.15|56.2
+Bushehr|Iran|28.97|50.83
+Aden|Yemen|12.8|45.0
+Hodeidah|Yemen|14.8|42.95
+Djibouti|Djibouti|11.6|43.15
+Aqaba|Jordan|29.5|35.0
+Port Said|Egypt|31.27|32.3|Suez Canal
+Sokhna|Egypt|29.6|32.35|Ain Sokhna
+Alexandria|Egypt|31.2|29.9
+Haifa|Israel|32.8|35.0
+Ashdod|Israel|31.8|34.65
+Beirut|Lebanon|33.9|35.5
+Mersin|Turkey|36.8|34.65
+Iskenderun|Turkey|36.6|36.2
+Izmir|Turkey|38.45|27.1
+Istanbul|Turkey|41.0|28.95
+Piraeus (Athens)|Greece|37.94|23.63|Athens
+Thessaloniki|Greece|40.63|22.93
+Rotterdam|Netherlands|51.95|4.1
+Amsterdam|Netherlands|52.4|4.85
+Antwerp|Belgium|51.3|4.3
+Hamburg|Germany|53.55|9.95
+Bremerhaven|Germany|53.55|8.55
+Le Havre|France|49.48|0.1
+Marseille|France|43.3|5.35
+Genoa|Italy|44.4|8.9
+La Spezia|Italy|44.1|9.83
+Livorno|Italy|43.55|10.3
+Naples|Italy|40.83|14.27
+Gioia Tauro|Italy|38.43|15.9
+Trieste|Italy|45.65|13.75
+Venice|Italy|45.43|12.3
+Valencia|Spain|39.45|-0.32
+Barcelona|Spain|41.35|2.17
+Algeciras|Spain|36.13|-5.43
+Bilbao|Spain|43.35|-3.05
+Lisbon|Portugal|38.7|-9.15
+Sines|Portugal|37.95|-8.87
+Felixstowe|United Kingdom|51.95|1.35
+Southampton|United Kingdom|50.9|-1.4
+London Gateway|United Kingdom|51.5|0.5|London
+Liverpool|United Kingdom|53.45|-3.0
+Dublin|Ireland|53.35|-6.2
+Gothenburg|Sweden|57.7|11.9
+Stockholm|Sweden|59.3|18.1
+Copenhagen|Denmark|55.7|12.6
+Oslo|Norway|59.9|10.7
+Gdansk|Poland|54.4|18.7
+Helsinki|Finland|60.15|24.95
+St Petersburg|Russia|59.9|30.2|Saint Petersburg
+Novorossiysk|Russia|44.7|37.8
+Murmansk|Russia|69.0|33.1
+Constanta|Romania|44.17|28.65
+Odesa|Ukraine|46.5|30.75|Odessa
+Valletta|Malta|35.9|14.5|Marsaxlokk
+Tangier Med|Morocco|35.88|-5.5|Tangier
+Casablanca|Morocco|33.6|-7.6
+Algiers|Algeria|36.77|3.07
+Tunis (Rades)|Tunisia|36.8|10.27|Tunis
+Tripoli|Libya|32.9|13.2
+Reykjavik|Iceland|64.15|-21.9
+Dakar|Senegal|14.68|-17.43
+Conakry|Guinea|9.5|-13.7
+Abidjan|Ivory Coast|5.3|-4.0|Cote d'Ivoire
+Tema|Ghana|5.63|0.0|Accra
+Lagos|Nigeria|6.45|3.4
+Douala|Cameroon|4.05|9.7
+Luanda|Angola|-8.8|13.23
+Pointe-Noire|Congo|-4.78|11.85
+Walvis Bay|Namibia|-22.95|14.5
+Cape Town|South Africa|-33.9|18.43
+Port Elizabeth (Gqeberha)|South Africa|-33.97|25.63|Gqeberha
+Durban|South Africa|-29.87|31.03
+Maputo|Mozambique|-25.97|32.58
+Beira|Mozambique|-19.83|34.85
+Dar es Salaam|Tanzania|-6.82|39.3
+Mombasa|Kenya|-4.05|39.67
+Mogadishu|Somalia|2.03|45.35
+Berbera|Somalia|10.43|45.0
+Toamasina|Madagascar|-18.15|49.42|Tamatave
+Port Louis|Mauritius|-20.15|57.5
+New York|USA|40.67|-74.05|Newark
+Boston|USA|42.35|-71.04
+Norfolk|USA|36.9|-76.3|Virginia
+Baltimore|USA|39.25|-76.55
+Charleston|USA|32.78|-79.93
+Savannah|USA|32.08|-81.09
+Jacksonville|USA|30.4|-81.55
+Miami|USA|25.78|-80.17
+Port Everglades|USA|26.09|-80.12|Fort Lauderdale
+Tampa|USA|27.9|-82.45
+Mobile|USA|30.7|-88.04
+New Orleans|USA|29.93|-90.05
+Houston|USA|29.73|-95.0
+Los Angeles|USA|33.73|-118.27
+Long Beach|USA|33.75|-118.2
+Oakland|USA|37.8|-122.3|San Francisco
+Seattle|USA|47.6|-122.35
+Tacoma|USA|47.27|-122.4
+Anchorage|USA|61.25|-149.9
+Honolulu|USA|21.3|-157.87|Hawaii
+Vancouver|Canada|49.3|-123.1
+Prince Rupert|Canada|54.3|-130.35
+Halifax|Canada|44.65|-63.57
+Saint John|Canada|45.27|-66.07
+Montreal|Canada|45.5|-73.55
+Manzanillo|Mexico|19.05|-104.3
+Lazaro Cardenas|Mexico|17.95|-102.2
+Veracruz|Mexico|19.2|-96.13
+Colon (Panama Canal)|Panama|9.36|-79.9|Cristobal
+Balboa (Panama City)|Panama|8.95|-79.57|Panama City
+Kingston|Jamaica|17.97|-76.8
+Freeport|Bahamas|26.5|-78.77
+San Juan|Puerto Rico|18.45|-66.1
+Caucedo (Santo Domingo)|Dominican Republic|18.43|-69.63|Santo Domingo
+Puerto Limon|Costa Rica|10.0|-83.03
+Cartagena|Colombia|10.4|-75.5
+Guayaquil|Ecuador|-2.28|-79.9
+Callao (Lima)|Peru|-12.05|-77.15|Lima
+Valparaiso|Chile|-33.03|-71.63
+San Antonio|Chile|-33.6|-71.62
+Punta Arenas|Chile|-53.15|-70.9
+Buenos Aires|Argentina|-34.6|-58.37
+Montevideo|Uruguay|-34.9|-56.2
+Santos|Brazil|-23.98|-46.3|Sao Paulo
+Rio de Janeiro|Brazil|-22.9|-43.17
+Paranagua|Brazil|-25.5|-48.5
+Itajai|Brazil|-26.9|-48.65
+Salvador|Brazil|-12.97|-38.5
+Recife|Brazil|-8.05|-34.87
+Fortaleza|Brazil|-3.72|-38.5
+Sydney|Australia|-33.85|151.2
+Melbourne|Australia|-37.83|144.9
+Brisbane|Australia|-27.38|153.17
+Fremantle (Perth)|Australia|-32.05|115.75|Perth
+Adelaide|Australia|-34.8|138.5
+Darwin|Australia|-12.47|130.85
+Auckland|New Zealand|-36.84|174.77
+Tauranga|New Zealand|-37.65|176.17
+Wellington|New Zealand|-41.28|174.78
+Port Moresby|Papua New Guinea|-9.45|147.15
+Suva|Fiji|-18.13|178.43
+Noumea|New Caledonia|-22.27|166.45
+Papeete|French Polynesia|-17.53|-149.57|Tahiti`.trim().split("\n").map(l=>{const a=l.split("|");return{name:a[0],country:a[1],lat:+a[2],lng:+a[3],alias:a[4]||""}});
+const nz=s=>String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();
+PORTS_DB.forEach(p=>{p._n=nz(p.name);p._a=nz(p.alias);p._c=nz(p.country)});
+function portSearch(q){
+  q=nz(q);if(!q)return[];
+  const sc=p=>p._n.startsWith(q)?0:p._a.split(",").some(x=>x.trim().startsWith(q))?1:p._n.split(/[ (]/).some(w=>w.startsWith(q))?2:(p._n.includes(q)||p._a.includes(q))?3:p._c.startsWith(q)?4:9;
+  return PORTS_DB.map(p=>[sc(p),p]).filter(x=>x[0]<9).sort((a,b)=>a[0]-b[0]||a[1].name.localeCompare(b[1].name)).slice(0,8).map(x=>x[1]);
+}
+/* narrow passages that a 0.5° raster of 110 m coastlines would close; cells along these lines are forced to water */
+const GATES=[
+ [[27.7,33.9],[28.5,33.2],[29.3,32.6],[29.93,32.55],[30.5,32.35],[31.27,32.32],[31.6,32.3]],            // Gulf of Suez + Suez Canal
+ [[12.2,44.2],[12.55,43.45],[13.5,42.6]],                                                                  // Bab el-Mandeb
+ [[9.65,-79.9],[9.36,-79.9],[9.0,-79.6],[8.6,-79.5]],                                                      // Panama Canal
+ [[39.9,26.2],[40.3,26.6],[40.5,27.5],[40.8,28.6],[41.0,29.0],[41.3,29.15]],                               // Dardanelles, Marmara, Bosphorus
+ [[36.0,-5.3],[35.95,-5.6],[35.95,-6.2]],                                                                  // Gibraltar
+ [[1.4,104.3],[1.17,104.2],[1.12,103.8],[1.5,102.9],[2.5,101.2],[4.5,99.3],[6.0,97.5]],                    // Singapore + Malacca
+ [[25.5,57.3],[26.65,56.4],[26.1,55.0]],                                                                   // Hormuz
+ [[50.5,0.8],[51.0,1.6],[51.9,3.2]],                                                                       // Dover
+ [[57.7,10.6],[56.8,11.6],[56.0,12.3],[55.6,12.75],[55.0,12.9],[54.6,13.5]],                               // Skagerrak - Oresund - Baltic
+ [[-8.0,115.7],[-8.7,115.7],[-9.3,115.7]]                                                                  // Lombok
+];
+const RG={step:.5,w:720,h:330,top:85,ready:false,legs:new Map()};
+const hav=(a,b,c,d)=>{const p=Math.sin((c-a)*R/2);let dl=d-b;dl=((dl+540)%360)-180;const q=Math.sin(dl*R/2),x=p*p+Math.cos(a*R)*Math.cos(c*R)*q*q;return 12742*Math.asin(Math.min(1,Math.sqrt(x)))};
+const rgLat=j=>RG.top-(j+.5)*RG.step,rgLon=i=>-180+(i+.5)*RG.step;
+const rgIJ=(la,lo)=>{lo=((lo+540)%360)-180;return[Math.min(RG.w-1,Math.max(0,Math.floor((lo+180)/RG.step))),Math.min(RG.h-1,Math.max(0,Math.floor((RG.top-la)/RG.step)))]};
+function rgBuild(){
+  const {w,h,step,top}=RG,k=4,c=document.createElement("canvas");c.width=w*k;c.height=h*k;const x=c.getContext("2d");x.fillStyle="#000";
+  const X=lo=>(lo+180)/step*k,Y=la=>(top-Math.max(top-h*step,Math.min(top,la)))/step*k;
+  world.features.forEach(f=>{const g=f.geometry,ps=g.type==="Polygon"?[g.coordinates]:g.type==="MultiPolygon"?g.coordinates:[];
+    ps.forEach(poly=>{x.beginPath();poly.forEach(r=>r.forEach(([lo,la],n)=>n?x.lineTo(X(lo),Y(la)):x.moveTo(X(lo),Y(la))));x.fill("evenodd")})});
+  const d=x.getImageData(0,0,w*k,h*k).data,cnt=new Uint8Array(w*h);
+  for(let y=0;y<h*k;y++){const row=((y/k)|0)*w;for(let xx=0;xx<w*k;xx++)if(d[(y*w*k+xx)*4+3]>127)cnt[row+((xx/k)|0)]++}
+  const water=new Uint8Array(w*h);
+  for(let j=0;j<h;j++){const la=rgLat(j),ok=la<=72&&la>=-62;for(let i=0;i<w;i++)water[j*w+i]=(ok&&cnt[j*w+i]<=9)?1:0}   // <=9/16 land: still water; poles closed
+  const gate=new Uint8Array(w*h);
+  GATES.forEach(g=>{let pi=-1,pj=-1;for(let s=0;s<g.length-1;s++){const a=g[s],b=g[s+1],n=Math.ceil(Math.max(Math.abs(b[0]-a[0]),Math.abs(b[1]-a[1]))/.05);
+    for(let t=0;t<=n;t++){const [i,j]=rgIJ(a[0]+(b[0]-a[0])*t/n,a[1]+(b[1]-a[1])*t/n);
+      if(pi>=0&&i!==pi&&j!==pj){water[j*w+pi]=1;gate[j*w+pi]=1}
+      water[j*w+i]=1;gate[j*w+i]=1;pi=i;pj=j}}});
+  const near=new Uint8Array(w*h);
+  for(let j=0;j<h;j++)for(let i=0;i<w;i++){if(!water[j*w+i]||gate[j*w+i])continue;
+    for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){const y=j+dj;if(y<0||y>=h)continue;if(!water[y*w+((i+di+w)%w)]){near[j*w+i]=1}}}
+  // connected ocean (4-neighbour flood from the mid-Atlantic) so ports never snap into lakes or enclosed water
+  const comp=new Uint8Array(w*h),[si,sj]=rgIJ(-30,-20),st=[sj*w+si];comp[st[0]]=1;
+  while(st.length){const q=st.pop(),i=q%w,j=(q/w)|0;
+    for(const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1]]){const y=j+dj;if(y<0||y>=h)continue;const n=y*w+((i+di+w)%w);if(water[n]&&!comp[n]){comp[n]=1;st.push(n)}}}
+  Object.assign(RG,{water,near,comp,gate,ready:true});
+}
+function rgSnap(la,lo){            // nearest ocean-connected water cell
+  const {w,h,comp}=RG,[i0,j0]=rgIJ(la,lo);let best=-1,bd=1e9;
+  for(let r=0;r<=24&&best<0;r++){for(let dj=-r;dj<=r;dj++)for(let di=-r;di<=r;di++){if(Math.max(Math.abs(di),Math.abs(dj))!==r)continue;
+    const j=j0+dj;if(j<0||j>=h)continue;const i=((i0+di)%w+w)%w,k=j*w+i;
+    if(comp[k]){const d=hav(la,lo,rgLat(j),rgLon(i));if(d<bd){bd=d;best=k}}}}
+  return best;
+}
+function rgAstar(s,t){
+  const {w,h,water,near}=RG,N=w*h,g=new Float32Array(N).fill(Infinity),par=new Int32Array(N).fill(-1),done=new Uint8Array(N);
+  const tl=rgLat((t/w)|0),tn=rgLon(t%w),H=[],hp=(a,b)=>H[a][0]<H[b][0];
+  const push=(f,v)=>{H.push([f,v]);let i=H.length-1;while(i>0){const p=(i-1)>>1;if(H[p][0]<=H[i][0])break;[H[p],H[i]]=[H[i],H[p]];i=p}};
+  const pop=()=>{const top=H[0],last=H.pop();if(H.length){H[0]=last;let i=0;for(;;){let l=2*i+1,r=l+1,m=i;if(l<H.length&&H[l][0]<H[m][0])m=l;if(r<H.length&&H[r][0]<H[m][0])m=r;if(m===i)break;[H[m],H[i]]=[H[i],H[m]];i=m}}return top};
+  g[s]=0;push(hav(rgLat((s/w)|0),rgLon(s%w),tl,tn),s);
+  while(H.length){const [,u]=pop();if(done[u])continue;done[u]=1;if(u===t)break;
+    const i=u%w,j=(u/w)|0,la=rgLat(j),lo=rgLon(i);
+    for(let dj=-1;dj<=1;dj++){const y=j+dj;if(y<0||y>=h)continue;
+      for(let di=-1;di<=1;di++){if(!di&&!dj)continue;const x=(i+di+w)%w,n=y*w+x;if(!water[n]||done[n])continue;
+        if(di&&dj&&!water[j*w+x]&&!water[y*w+i])continue;                // no squeezing diagonally between two land cells
+        const c=g[u]+hav(la,lo,rgLat(y),rgLon(x))*(near[n]?1.7:1);
+        if(c<g[n]){g[n]=c;par[n]=u;push(c+hav(rgLat(y),rgLon(x),tl,tn),n)}}}}
+  if(!isFinite(g[t]))return null;
+  const out=[];for(let q=t;q>=0;q=par[q])out.push(q);return out.reverse();
+}
+/* straight (Mercator) segment stays on open water? */
+function rgClear(p,q){
+  const {w,water,near}=RG,n=Math.ceil(Math.max(Math.abs(q[1]-p[1]),Math.abs(q[0]-p[0]))/.2)||1,y0=mercY(p[0]),y1=mercY(q[0]);
+  for(let t=0;t<=n;t++){const f=t/n,[i,j]=rgIJ(invY(y0+(y1-y0)*f),p[1]+(q[1]-p[1])*f),k=j*w+i;if(!water[k]||near[k])return false}return true;
+}
+function rgLeg(A,B){
+  const key=A.name+">"+B.name;if(RG.legs.has(key))return RG.legs.get(key);
+  const s=rgSnap(A.lat,A.lng),t=rgSnap(B.lat,B.lng);if(s<0||t<0)return null;
+  const cells=s===t?[s]:rgAstar(s,t);if(!cells)return null;
+  let pts=[],prev=null;                                          // unwrap longitudes so the path is continuous across 180°
+  cells.forEach(c=>{let lo=rgLon(c%RG.w);if(prev!=null){while(lo-prev>180)lo-=360;while(prev-lo>180)lo+=360}prev=lo;pts.push([rgLat((c/RG.w)|0),lo])});
+  const out=[pts[0]];let i=0;                                    // greedy line-of-sight smoothing
+  while(i<pts.length-1){let j=pts.length-1;while(j>i+1&&!rgClear(pts[i],pts[j]))j--;out.push(pts[j]);i=j}
+  const unw=(ref,lng)=>ref+(((lng-ref)+540)%360-180),first=[A.lat,unw(out[0][1],A.lng)],last=[B.lat,unw(out[out.length-1][1],B.lng)];
+  const line=[first].concat(out,[last]);let km=0;for(let k=1;k<line.length;k++)km+=hav(line[k-1][0],line[k-1][1],line[k][0],line[k][1]);
+  const r={line,km};RG.legs.set(key,r);return r;
+}
+function splitAM(c){                                             // break a polyline where it crosses ±180° so Leaflet doesn't draw across the whole map
+  const wrap=l=>((l+540)%360)-180,out=[];let cur=[[c[0][0],wrap(c[0][1])]];
+  for(let i=1;i<c.length;i++){const a=cur[cur.length-1],b=[c[i][0],wrap(c[i][1])];
+    if(Math.abs(b[1]-a[1])>180){const bU=b[1]+(b[1]<a[1]?360:-360),e=bU>180?180:-180,t=(e-a[1])/(bU-a[1]),la=a[0]+(b[0]-a[0])*t;
+      cur.push([la,e]);out.push(cur);cur=[[la,-e],b]}else cur.push(b)}
+  out.push(cur);return out;
+}
+/* ---- UI ---- */
+const SR={rows:[],layer:null};
+const srLabel=k=>k==="from"?"Starting port":k==="to"?"Final destination":"Stop";
+function srRow(kind,before){
+  const d=document.createElement("div");d.className="shrow";
+  d.innerHTML=`<div class="fld"><label>${srLabel(kind)}</label><input placeholder="Search a port city, e.g. Mumbai" autocomplete="off" aria-label="${srLabel(kind)}"><div class="sg"></div></div>${kind==="stop"?'<button type="button" class="chip shdel" aria-label="Remove stop">✕</button>':""}`;
+  const row={kind,el:d,inp:d.querySelector("input"),sg:d.querySelector(".sg"),val:null};
+  row.inp.addEventListener("input",()=>{row.val=null;srCheck();const r=portSearch(row.inp.value);
+    row.sg.innerHTML=r.length?r.map((p,i)=>`<button type="button" data-i="${i}">${esc(p.name)}<small>${esc(p.country)}</small></button>`).join(""):(row.inp.value.trim()?'<button type="button" disabled>No port city found</button>':"");
+    row.sg.style.display=row.sg.innerHTML?"block":"none";
+    row.sg.querySelectorAll("button[data-i]").forEach(b=>b.onclick=()=>{row.val=r[b.dataset.i];row.inp.value=row.val.name;row.sg.style.display="none";srCheck()})});
+  row.inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&!$("shgo").disabled)srGo()});
+  const del=d.querySelector(".shdel");if(del)del.onclick=()=>{SR.rows=SR.rows.filter(r=>r!==row);d.remove();srCheck()};
+  const host=$("shrows");before?host.insertBefore(d,before.el):host.appendChild(d);return row;
+}
+const srCheck=()=>{const a=SR.rows[0],b=SR.rows[SR.rows.length-1];$("shgo").disabled=!(a.inp.value.trim()&&b.inp.value.trim());$("shadd").disabled=SR.rows.length>=8};
+function srOpen(){
+  if(!SR.rows.length){SR.rows=[srRow("from")];SR.rows.push(srRow("to"))}
+  $("shmodal").hidden=false;$("shmsg").textContent="";$("shclr").hidden=!SR.layer;srCheck();setTimeout(()=>SR.rows[0].inp.focus(),50);
+}
+const srClose=()=>{$("shmodal").hidden=true;SR.rows.forEach(r=>r.sg.style.display="none")};
+function srClear(silent){if(SR.layer){map.removeLayer(SR.layer);SR.layer=null;OC.rt=null}if(!silent)closeSheet()}
+async function srGo(){
+  const msg=$("shmsg"),go=$("shgo");msg.textContent="";go.disabled=true;go.textContent="Finding route...";
+  try{
+    const pts=SR.rows.map(r=>{let p=r.val||portSearch(r.inp.value)[0];if(!p)throw new Error(`Couldn't find a port city matching "${r.inp.value.trim()}"`);return p});
+    for(let i=1;i<pts.length;i++)if(pts[i]===pts[i-1])throw new Error("Two consecutive ports are the same — pick different ports");
+    await worldReady;if(!world)throw new Error("Land outlines failed to load, so sea routes can't be calculated");
+    await new Promise(r=>setTimeout(r,30));
+    if(!RG.ready)rgBuild();
+    const legs=[];
+    for(let i=1;i<pts.length;i++){await new Promise(r=>setTimeout(r,0));const l=rgLeg(pts[i-1],pts[i]);if(!l)throw new Error(`No sea route found between ${pts[i-1].name} and ${pts[i].name}`);legs.push(l)}
+    srClose();srShow(pts,legs);
+  }catch(e){msg.textContent=e.message||"Could not calculate the route"}
+  finally{go.textContent="Show route";srCheck()}
+}
+function srShow(pts,legs){
+  srClear(true);const g=L.layerGroup(),all=[];
+  legs.forEach(l=>{const segs=splitAM(l.line);segs.forEach(s=>{
+    g.addLayer(L.polyline(s,{pane:"ship",interactive:false,color:"#fff",weight:7,opacity:.9,lineJoin:"round"}));
+    g.addLayer(L.polyline(s,{pane:"ship",interactive:false,color:"#0b1f4d",weight:3.5,lineJoin:"round"}));s.forEach(p=>all.push(p))})});
+  pts.forEach((p,i)=>{const c=i===0?"#16a34a":i===pts.length-1?"#dc2626":"#f59e0b";
+    g.addLayer(L.circleMarker([p.lat,p.lng],{pane:"ship",interactive:false,radius:7,color:"#fff",weight:3,fillColor:c,fillOpacity:1}).bindTooltip(p.name,{permanent:true,direction:"top",offset:[0,-8],className:"rl"}))});
+  SR.layer=OC.rt=g;ocApply();
+  map.fitBounds(L.latLngBounds(all),{paddingTopLeft:[30,110],paddingBottomRight:[30,Math.round(innerHeight*.42)]});
+  const km=legs.reduce((a,l)=>a+l.km,0),nm=km/1.852,days=nm/14/24,fmt=n=>Math.round(n).toLocaleString("en-IN");
+  if(hl){map.removeLayer(hl);hl=null}selTok++;
+  openSheet(`<div class="hd"><div class="ic">⚓</div><div><div class="tp">${fmt(nm)} nm</div><div class="cd">${fmt(km)} km · about ${days<1?Math.round(days*24)+" hours":days.toFixed(1)+" days"} at 14 knots (estimate)</div></div>
+   <div class="pl"><b>${esc(pts[0].name)} → ${esc(pts[pts.length-1].name)}</b><span>${pts.length>2?pts.length-2+" stop"+(pts.length>3?"s":""):"Direct"}</span></div></div>
+   <div class="st" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr))">${legs.map((l,i)=>`<div><small>Leg ${i+1} · ${esc(pts[i].name)} → ${esc(pts[i+1].name)}</small>${fmt(l.km/1.852)} nm</div>`).join("")}</div>
+   <div class="src">Indicative route over simplified coastlines and canals (Suez, Panama and the main straits). It ignores weather, ice, port limits and traffic schemes — not for navigation.</div>
+   <button id="shsheetclr" type="button" class="chip" style="margin-top:8px">Clear route</button>`);
+  $("shsheetclr").onclick=()=>srClear();
+}
+function wireShip(){
+  $("shbtn").onclick=srOpen;$("shx").onclick=srClose;$("shgo").onclick=srGo;$("shclr").onclick=()=>{srClear();srClose()};
+  $("shadd").onclick=()=>{if(SR.rows.length>=8)return;const to=SR.rows[SR.rows.length-1],r=srRow("stop",to);SR.rows.splice(SR.rows.length-1,0,r);srCheck();r.inp.focus()};
+  $("shmodal").addEventListener("click",e=>{if(e.target===$("shmodal"))srClose()});
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("shmodal").hidden)srClose()});
+  document.addEventListener("click",e=>{if(!e.target.closest(".shrow"))SR.rows.forEach(r=>r.sg.style.display="none")});
+}
+
+/* ---- ocean point popup (reuses the bottom sheet and its CSS classes) ---- */
+const DIRS16=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+const dirTxt=d=>d==null?null:"from "+DIRS16[Math.round(d/22.5)%16]+" ("+Math.round(d)+"°)";
+async function selectOcean(ll){
+  if(!world||!isWater(ll)){if(!document.querySelector(".toast"))toast("That's land — tap an ocean or sea. Switch to Roads for land weather.");return}
+  const tok=++selTok;
+  if(hl)map.removeLayer(hl);
+  hl=L.circleMarker(ll,{radius:9,color:"#fff",weight:3,fillColor:"#0f6b8f",fillOpacity:1}).addTo(map);
+  openSheet('<div class="ld">Loading marine weather...</div>');
+  const pt=map.latLngToContainerPoint(ll),H=map.getSize().y;if(pt.y>H*.5)map.panBy([0,pt.y-H*.3]);
+  try{const r=await getOcean(ll);if(tok!==selTok)return;openSheet(oceanHTML(r,ll,seaName(ll)))}
+  catch(e){if(tok!==selTok)return;
+    openSheet(`<div class="ld">${e&&e.nodata?"No marine weather is available for this exact point (it may be too close to land or outside model coverage).":"Marine weather is temporarily unavailable — all weather sources failed. Please try again shortly."}</div>`)}
+}
+function oceanHTML(r,ll,name){
+  const a=r.air,m=r.sea,f=v=>v==null?"–":Math.round(v),NA="Unavailable";
+  const w=a&&a.code!=null?(WMO[a.code]||["❔","Unknown"]):["❔","Condition unavailable"],ic=a&&a.code===0&&a.isDay===0?"🌙":w[0];
+  const stat=(k,v)=>`<div><small>${k}</small>${v==null?`<span class="n">${NA}</span>`:v}</div>`;
+  const kn=v=>v==null?null:Math.round(v)+" km/h · "+Math.round(v/1.852)+" kn";
+  const val=(v,u,d)=>v==null?null:(+v).toFixed(d)+" "+u;
+  const t=name||"Open water";
+  const air=a?"":`<div class="cd" style="margin-top:8px">Air and wind data unavailable: all weather sources failed for this point.</div>`;
+  const sea=m?"":`<div class="cd" style="margin-top:8px">Wave and sea data unavailable: no marine source returned data for this point.</div>`;
+  const srcs=[a&&a.src,m&&m.src].filter(Boolean).filter((v,i,x)=>x.indexOf(v)===i).join(" · ");
+  const bk=(a&&a.src!=="Open-Meteo")||(m&&m.src!=="Open-Meteo Marine");
+  return `<div class="hd"><div class="ic">${ic}</div><div><div class="tp">${a?f(a.temp)+"°C":"–"}</div><div class="cd">${w[1]}${a&&a.feels!=null?" · Feels "+f(a.feels)+"°":""}</div></div>
+   <div class="pl"><b>${esc(t)}</b><span>${ll.lat.toFixed(3)}°, ${ll.lng.toFixed(3)}°</span></div></div>${air}${sea}
+   <div class="sp">General</div><div class="st mar">${stat("Cloud cover",a&&a.cloud!=null?f(a.cloud)+"%":null)}${stat("Pressure",a&&a.pressure!=null?f(a.pressure)+" hPa":null)}${stat("Humidity",a&&a.humidity!=null?f(a.humidity)+"%":null)}${stat("Precipitation",a&&a.precip!=null?a.precip+" mm":null)}</div>
+   <div class="sp">Wind</div><div class="st mar">${stat("Speed",a?kn(a.windSpeed):null)}${stat("Direction",a?dirTxt(a.windDir):null)}${stat("Gusts",a?kn(a.windGust):null)}</div>
+   <div class="sp">Waves</div><div class="st mar">${stat("Significant height",m?val(m.waveHeight,"m",1):null)}${stat("Direction",m?dirTxt(m.waveDir):null)}${stat(m&&m.wavePeriodKind==="peak"?"Peak period":"Period",m?val(m.wavePeriod,"s",1):null)}${stat("Max height today",m?val(m.waveMax,"m",1):null)}</div>
+   <div class="sp">Marine</div><div class="st mar">${stat("Sea surface temp",m?val(m.sst,"°C",1):null)}</div>
+   <div class="src">${srcs?"Source: "+esc(srcs)+(bk?" (backup source in use)":""):""}</div>`;
+}
+
+/* ================= TRACKS MODE: railway lines =================
+   Land weather is shared with Roads (same zones, same data - nothing is reloaded). Only the base map changes (terrain, no roads)
+   and railway lines are added on top.
+   Zoomed out (< 7): Natural Earth world railroads (one static file, no passenger/cargo information -> drawn as "mixed").
+   Zoomed in (>= 7): OpenStreetMap railways fetched per map cell from Overpass (several mirrors with failover), classified from OSM tags. */
+const RAIL_NE=[
+ "https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@master/geojson/ne_10m_railroads.geojson",
+ "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_railroads.geojson"];
+const RAIL_OP=[{id:"op1",name:"Overpass (overpass-api.de)",url:"https://overpass-api.de/api/interpreter"},
+ {id:"op2",name:"Overpass (kumi.systems)",url:"https://overpass.kumi.systems/api/interpreter"},
+ {id:"op3",name:"Overpass (private.coffee)",url:"https://overpass.private.coffee/api/interpreter"}];
+const RAIL_COL="#e11d48";   // one railway style: bold pink-red with a white outline, distinct from the dark borders and the weather colours
+const RAIL_TIERS=[
+ {id:"a",z:7,cell:3,w:2,q:'["railway"="rail"]["usage"="main"][!"service"]'},
+ {id:"b",z:8,cell:2,w:2.4,q:'["railway"="rail"]["usage"~"^(main|branch)$"][!"service"]'},
+ {id:"c",z:10,cell:1,w:2.8,q:'["railway"~"^(rail|narrow_gauge|light_rail|subway)$"][!"service"]'},
+ {id:"d",z:12,cell:.25,w:3.4,q:'["railway"~"^(rail|narrow_gauge|light_rail|subway)$"]'}];
+const RL={cells:new Map(),busy:new Set(),fail:new Map(),queue:[],active:0,ne:null,neP:null,r:null,warned:0,tm:0};
+function railPane(){if(!map.getPane("rail")){const p=map.createPane("rail");p.style.zIndex=335;p.style.pointerEvents="none"}return RL.r||(RL.r=L.canvas({pane:"rail",padding:.4}))}
+function railWant(){
+  const z=Math.floor(map.getZoom()),t=RAIL_TIERS.slice().reverse().find(t=>z>=t.z);if(!t)return null;
+  const b=map.getBounds(),c=t.cell,ctr=map.getCenter(),cells=[];
+  const i0=Math.floor((b.getWest()+180)/c),i1=Math.floor((b.getEast()+180)/c),j0=Math.floor((Math.max(-89,b.getSouth())+90)/c),j1=Math.floor((Math.min(89,b.getNorth())+90)/c);
+  for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++)cells.push({k:t.id+":"+i+":"+j,i,j,t,d:Math.hypot((i+.5)*c-180-ctr.lng,(j+.5)*c-90-ctr.lat)});
+  return{t,cells:cells.sort((a,b)=>a.d-b.d).slice(0,20)};
+}
+async function railLoad(cell){
+  const {t,i,j}=cell,c=t.cell,s=j*c-90,w=i*c-180,q=`[out:json][timeout:60];way${t.q}(${s},${w},${s+c},${w+c});out skel geom qt;`;
+  const d=await chain("rail",RAIL_OP,p=>jget(p.url+"?data="+encodeURIComponent(q),70000).then(r=>{
+    if(!r||!Array.isArray(r.elements))throw new Error("invalid data");
+    if(r.remark&&/error|timed out/i.test(r.remark))throw new Error("overpass: "+r.remark);return r}));
+  const rec={g:L.layerGroup(),n:0},rd=railPane(),o={pane:"rail",renderer:rd,interactive:false,lineCap:"round",lineJoin:"round",smoothFactor:1.2},cas=[],lin=[];
+  d.elements.forEach(el=>{if(el.type!=="way"||!el.geometry||el.geometry.length<2)return;const ll=el.geometry.map(p=>[p.lat,p.lon]);
+    cas.push(L.polyline(ll,{...o,color:"#fff",weight:t.w+2,opacity:.85}));lin.push(L.polyline(ll,{...o,color:RAIL_COL,weight:t.w,opacity:1}));rec.n++});
+  cas.concat(lin).forEach(l=>rec.g.addLayer(l));                 // white outlines first, coloured lines on top
+  return rec;
+}
+function railPump(){
+  while(RL.active<2&&RL.queue.length){
+    const c=RL.queue.shift();if(RL.cells.has(c.k)||RL.busy.has(c.k))continue;
+    RL.busy.add(c.k);RL.active++;
+    railLoad(c).then(rec=>{RL.cells.set(c.k,rec);RL.warned=0})
+      .catch(()=>{RL.fail.set(c.k,Date.now());if(!RL.warned){RL.warned=1;toast("Detailed railway data is temporarily unavailable; showing main lines only")}})
+      .finally(()=>{RL.busy.delete(c.k);RL.active--;railRender();railPump()});
+  }
+}
+let railTm=0;
+function railUpdate(){
+  clearTimeout(railTm);railTm=setTimeout(()=>{
+    if(MODE!=="tracks")return;
+    const w=railWant();RL.queue=[];
+    if(w)w.cells.forEach(c=>{if(!RL.cells.has(c.k)&&!RL.busy.has(c.k)&&Date.now()-(RL.fail.get(c.k)||0)>60e3)RL.queue.push(c)});
+    railRender();railPump();
+  },250);
+}
+function railRender(){
+  const on=MODE==="tracks",w=on?railWant():null,keep=new Set(w?w.cells.map(c=>c.k):[]);
+  for(const [k,rec] of RL.cells){(on&&F.rl&&keep.has(k))?rec.g.addTo(map):map.removeLayer(rec.g)}
+  if(RL.cells.size>120)for(const [k,rec] of RL.cells){if(RL.cells.size<=100)break;if(!keep.has(k)){map.removeLayer(rec.g);RL.cells.delete(k)}}
+  const full=!!w&&w.cells.every(c=>RL.cells.has(c.k));
+  if(RL.ne)(on&&F.rl&&!full)?RL.ne.addTo(map):map.removeLayer(RL.ne);     // overview lines until the detailed cells are in
+}
+const railApply=()=>railRender();
+function railEnter(){
+  railPane();
+  if(map.attributionControl&&!RL.attr){RL.attr=1;map.attributionControl.addAttribution("Railways © OpenStreetMap contributors, Natural Earth")}
+  railUpdate();
+  if(!RL.neP){RL.neP=loadJSON(RAIL_NE,j=>j&&j.type==="FeatureCollection"&&j.features.length>100).then(j=>{
+    if(j)RL.ne=L.geoJSON(j,{pane:"rail",renderer:railPane(),interactive:false,style:{color:RAIL_COL,weight:1.6,opacity:.95}});
+    else{RL.neP=null;if(MODE==="tracks")toast("World railway overview could not be loaded — zoom in to load detailed lines")}
+    railRender();return j})}
+}
+function railLeave(){RL.queue=[];railRender()}
+function wireRail(){map.on("moveend",railUpdate)}
+
+/* ---- mode switching: one map, layers added/removed, nothing recreated ---- */
+function movePill(){const b=document.querySelector(`#modes [data-m=${MODE}]`),p=$("mpill");if(!b)return;p.style.width=b.offsetWidth+"px";p.style.transform=`translateX(${b.offsetLeft-4}px)`}
+function setMode(m){
+  if(m===MODE)return;
+  const prev=MODE;MODE=m;selTok++;closeSheet();closeRoute();srClose();
+  document.body.classList.remove("m-roads","m-oceans","m-tracks");document.body.classList.add("m-"+m);
+  document.querySelectorAll("#modes button").forEach(b=>b.setAttribute("aria-selected",b.dataset.m===m));movePill();
+  if(routeLayer){m==="roads"?routeLayer.addTo(map):map.removeLayer(routeLayer)}
+  map.getContainer().style.cursor="";
+  if(prev==="tracks"||m==="tracks")setSat(sat);    // terrain base (no roads) only in Tracks
+  if(prev==="tracks")railLeave();
+  applyLayers();                                   // gates land weather, boundaries, labels, cities, night, and the ocean/rail layers
+  if(m!=="oceans"){zones.forEach(z=>z.on&&Date.now()-z.last>TTL&&!z.busy&&z.load(true));syncStatus()}   // weather already loaded is reused
+  else ocEnter();
+  if(m==="tracks")railEnter();
+}
+async function ocEnter(){
+  ocSyncStatus();setStatus(OC.pts.length&&!OC.busy?"ok":"load");
+  await worldReady;if(MODE!=="oceans")return;
+  if(!world){setStatus("err");toast("Land outlines could not be loaded, so the ocean map is unavailable");return}
+  if(!marineP)marineP=loadJSON(MARINE_URLS,j=>j&&j.type==="FeatureCollection"&&j.features.length>5).then(j=>{marine=j;return j});
+  if(!OC.mask){ocInitGrid();OC.mask=ocBuildMask();OC.samples=ocSamples()}
+  ocApply();
+  if(OC.pts.length)ocRender();
+  ocLoad(false);
+}
+function wireModes(){
+  document.querySelectorAll("#modes button").forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+  wireShip();document.body.classList.add("m-roads");movePill();addEventListener("resize",movePill);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(movePill);
+  map.on("zoomend",ocZoomStyle);wireRail();
+  setInterval(()=>{if(MODE==="oceans"&&!document.hidden)ocLoad(true)},TTL);   // auto-refresh ocean weather (Oceans mode only)
+}
+
+/* ================= CONTROLS + STATUS ================= */
+function wire(){
+  $("zi").onclick=()=>map.zoomIn();$("zo").onclick=()=>map.zoomOut();$("rst").onclick=()=>{closeSheet();resetView()};
+  $("bt").onclick=()=>setSat(!sat);
+  $("ref").onclick=()=>{if(MODE==="oceans")ocLoad(true);else zones.forEach(z=>z.on&&z.load(true))};
+  $("lyb").onclick=()=>{const l=$("lay");l.style.display=l.style.display==="block"?"none":"block"};
+  $("loc").onclick=()=>locate().then(ll=>{map.flyTo(ll,10,{duration:.9});pick(ll,null,true)}).catch(()=>{});
+  $("lay").querySelectorAll("input").forEach(cb=>cb.onchange=()=>{F[cb.dataset.l]=cb.checked;applyLayers()});
+  $("chips").innerHTML=Object.keys(ZDEF).map(k=>`<button class="chip" data-z="${k}" aria-pressed="false" disabled>${ZDEF[k].name}</button>`).join("");
+  $("chips").querySelectorAll(".chip").forEach(b=>b.onclick=()=>{const z=zones.find(q=>q.id===b.dataset.z);setZone(b.dataset.z,!(z&&z.on),true)});
+  if(innerWidth<640)$("legend").open=false;
+  $("lgb").innerHTML=CL.map(c=>`<div><i style="background:${c[1]}"></i>${c[2]} ${c[0]}</div>`).join("");
+}
+function toast(m){const t=document.createElement("div");t.className="toast";t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),3500)}
+function setStatus(s){
+  const t=$("stx");$("dot").className=s==="ok"?"ok":s==="err"?"err":"";
+  if(s==="load"){t.textContent="Loading live weather...";$("ref").classList.add("spin")}
+  else if(s==="err")t.textContent="Weather data temporarily unavailable";
+  else tick();
+}
+function syncStatus(){
+  if(MODE==="oceans"){ocSyncStatus();return}
+  if(zones.some(z=>z.busy))return;$("ref").classList.remove("spin");
+  const on=zones.filter(z=>z.on);
+  if(on.every(z=>z.pts.length)&&!on.some(z=>z.fail))setStatus("ok");
+  else if(on.some(z=>z.pts.length)){setStatus("ok");toast("Some areas could not be loaded")}
+  else{setStatus("err");toast("Weather data temporarily unavailable")}
+}
+function tick(){
+  const l=MODE==="oceans"?(OC.last?[OC.last]:[]):zones.filter(z=>z.on&&z.last).map(z=>z.last);if(!l.length)return;
+  const m=Math.floor((Date.now()-Math.min(...l))/60e3);
+  $("stx").textContent=`Live weather · Updated ${m<1?"just now":m+" min ago"}`;
+}
+setInterval(()=>{if($("dot").classList.contains("ok"))tick()},30e3);
+setInterval(()=>{if(MODE!=="oceans")zones.forEach(z=>z.on&&z.load(true))},TTL);   // auto-refresh every 30 min
+
+/* ================= START ================= */
+(async()=>{
+  initMap();wire();wireModes();drawNight();setInterval(drawNight,5*60e3);
+  const [st,wd]=await Promise.all([
+    loadJSON(STATE_URLS,j=>j.type==="FeatureCollection"&&j.features.length>20),
+    loadJSON(WORLD_URLS,j=>j.type==="FeatureCollection"&&j.features.length>100)]);
+  states=st;world=wd;_wr();
+  if(!states){setStatus("err");toast("Could not load state boundaries; weather zones need them to stay on land");return}
+  states.features.forEach(f=>f._bb=turf.bbox(f));
+  if(world)Object.keys(ZDEF).forEach(k=>{$("chips").querySelector(`[data-z=${k}]`).disabled=false});
+  else{$("chips").querySelector('[data-z=sub]').disabled=false;toast("World boundary data failed to load; only India is available")}
+  setZone("sub",true,false);
+})();
+</script>
+</body>
+</html>
